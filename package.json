@@ -1,9 +1,22 @@
 {
   "dependencies": {
+    "@google/genai": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
+    "path": "^0.12.7",
     "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.15",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }

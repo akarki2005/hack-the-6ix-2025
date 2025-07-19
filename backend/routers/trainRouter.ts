@@ -14,6 +14,8 @@ trainRouter.post("/", async (req, res) => {
     const data: trainRequestData = trainRequestSchema.parse(req.body);
 
     // do training magic here
+    // 1. git clone the repo
+    // 2. somehow train the LLM on the repo.
 
     // return answer
     const result: trainResponseData = { ok: true };
