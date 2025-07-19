@@ -5,6 +5,8 @@ import {
   trainRequestSchema,
   trainResponseData,
 } from "../schemas/train";
+import validatePrLink from "../parse/validatePr";
+import acquireRepo from "../parse/acquireRepo";
 
 const trainRouter = express.Router();
 
@@ -15,6 +17,19 @@ trainRouter.post("/", async (req, res) => {
 
     // do training magic here
     // 1. git clone the repo
+    const validated = validatePrLink({ url: data.github_link });
+    if (!validated.ok) {
+      res
+        .status(400)
+        .json({ error: "Invalid input", issues: "wrong github link format" });
+    }
+
+    const repoData = acquireRepo({ cloneUrl: data.github_link });
+
+    if (repoData.error) {
+      res.status(400).json({ error: "Invalid input", issues: repoData.error });
+    }
+
     // 2. somehow train the LLM on the repo.
 
     // return answer

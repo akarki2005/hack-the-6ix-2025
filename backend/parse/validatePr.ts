@@ -17,13 +17,13 @@ export default function validatePrLink(
   const url = input.url.trim();
   const regex = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/;
   const match = url.match(regex);
-  if (match) {
-    const [, owner, repo, prNumberStr] = match;
-    const prNumber = Number(prNumberStr);
-    if (!isNaN(prNumber)) {
-      return { ok: true, owner, repo, prNumber };
-    }
-    return { ok: false, error: "Invalid PR number in URL" };
+  if (!match) {
+    return { ok: false, error: "Invalid GitHub PR URL" };
   }
-  return { ok: false, error: "Invalid GitHub PR URL" };
+  const [, owner, repo, prNumberStr] = match;
+  const prNumber = Number(prNumberStr);
+  if (!isNaN(prNumber)) {
+    return { ok: true, owner, repo, prNumber };
+  }
+  return { ok: false, error: "Invalid PR number in URL" };
 }

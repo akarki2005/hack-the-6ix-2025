@@ -37,9 +37,18 @@ export async function generate(
   ai: GoogleGenAI,
   query: string
 ): Promise<string> {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-001",
-    contents: query,
-  });
-  return response.text ?? "";
+  return "yes";
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash-001",
+      contents: query,
+    });
+    return response.text ?? "aigenerate";
+  } catch (err) {
+    if (err instanceof Error) {
+      return err.message;
+    } else {
+      return "Unknown error";
+    }
+  }
 }
