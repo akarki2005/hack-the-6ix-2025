@@ -1,5 +1,12 @@
-import { GenerateSeniorStyleSheet } from "../generateSeniorStyleSheet";
+import {
+  GenerateSeniorStyleSheet,
+  GenerateSeniorStyleSheetAsync,
+} from "../generateSeniorStyleSheet";
 import { SeniorContext, RepoFile } from "../../schemas/analysis";
+import { createLLMFromEnv } from "../../schemas/LLM";
+
+import * as dotenv from "dotenv";
+dotenv.config();
 
 describe("GenerateSeniorStyleSheet", () => {
   const mockFiles: RepoFile[] = [
@@ -58,7 +65,9 @@ export function validateUser(u) { return userSchema.parse(u); }`,
     expect(result.exemplars.route.path).toBe("routes/api.ts");
     expect(result.exemplars.service.path).toBe("services/userService.ts");
     expect(result.exemplars.test.path).toBe("tests/userService.test.ts");
-    expect(result.exemplars.validation.path).toBe("validation/userValidation.ts");
+    expect(result.exemplars.validation.path).toBe(
+      "validation/userValidation.ts"
+    );
     expect(result.namingExamples).toContain("getApi");
     expect(result.namingExamples).toContain("getUserService");
   });
@@ -67,7 +76,11 @@ export function validateUser(u) { return userSchema.parse(u); }`,
     const minimalContext: SeniorContext = {
       diffFiles: [],
       relatedFiles: [
-        { path: "misc/other.ts", content: "export function foo() {}", language: "TypeScript" },
+        {
+          path: "misc/other.ts",
+          content: "export function foo() {}",
+          language: "TypeScript",
+        },
       ],
       techStack: {
         languages: ["TypeScript"],
@@ -83,4 +96,32 @@ export function validateUser(u) { return userSchema.parse(u); }`,
     expect(result.exemplars.test.path).toBe("misc/other.ts");
     expect(result.exemplars.validation.path).toBe("misc/other.ts");
   });
-}); 
+
+  it("should generate LLM-powered summaries if LLM is provided", async () => {
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn("GEMINI_API_KEY not set, skipping LLM test");
+      return;
+    }
+    const llm = createLLMFromEnv();
+    const result = await GenerateSeniorStyleSheetAsync({
+      seniorContext: mockContext,
+      llmClient: llm,
+    });
+    console.log(result.layering);
+    // Check that the LLM summaries are non-empty and not the fallback string
+    expect(result.layering).toBeTruthy();
+    expect(result.layering).not.toMatch(
+      /^Uses clear separation|^Standard practice/
+    );
+    expect(result.validation).toBeTruthy();
+    expect(result.validation).not.toMatch(
+      /^Validation is performed|^Standard practice/
+    );
+    expect(result.errorHandling).toBeTruthy();
+    expect(result.errorHandling).not.toMatch(
+      /^Error handling uses|^Standard practice/
+    );
+    expect(result.naming).toBeTruthy();
+    expect(result.naming).not.toMatch(/^Naming follows|^Standard practice/);
+  }, 10000);
+});

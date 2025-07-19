@@ -1,8 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-
 import { GoogleGenAI } from "@google/genai";
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // Helper: read JSON if exists
 export function readJSON(filePath: string): any {
