@@ -14,7 +14,5 @@ export async function gradeByTests(
   //validate tests
   const total = tests?.length ?? 0;
 
-
-
-  return { total, passed, failed, durationMs, failedTests };
+  return { total, passed: 0, failed: 0, durationMs: 0, failedTests: [] };
 }

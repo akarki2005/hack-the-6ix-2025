@@ -7,6 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import generateContext from "./generateContext";
 import { queryData } from "../schemas/query";
+import { LLM } from "../schemas/LLM";
 
 /**
  * Black-box helper – replace with real implementation that fetches the
@@ -25,6 +26,7 @@ async function getDiffFilesFromPR(githubLink: string): Promise<DiffFile[]> {
 interface GradeByAllInput {
   github_link: string;
   newRepoRoot: string;
+  llmClient: LLM;
   queries: queryData[];
 }
 
@@ -35,7 +37,7 @@ interface GradeByAllOutput {
 export async function gradeByAll(
   request: GradeByAllInput
 ): Promise<GradeByAllOutput> {
-  const { github_link, queries, newRepoRoot } = request;
+  const { github_link, queries, newRepoRoot, llmClient } = request;
 
   // 1. Fetch raw diff information for the pull-request
   const diffFiles = await getDiffFilesFromPR(github_link);
@@ -69,7 +71,8 @@ export async function gradeByAll(
   // 4. Delegate to individual graders
   const byUserCriteria = await gradeByCriteria({
     context: seniorContext,
-    queries,
+    criteria: queries,
+    llmClient,
   } as any);
 
   const byTests = await gradeByTests({
@@ -81,6 +84,7 @@ export async function gradeByAll(
   const bySeniorCriteria = await gradeBySeniorStyleSheet({
     context: seniorContext,
     seniorStyleSheet: styleSheetJson,
+    llmClient,
   } as any);
 
   // 5. Combine results
