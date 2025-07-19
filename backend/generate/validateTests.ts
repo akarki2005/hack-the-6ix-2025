@@ -98,12 +98,5 @@ export default async function validateTests(
 
   const result = await runJestAndParse(runDir);
 
-  // Clean up temp directory after running
-  try {
-    fs.rmSync(runDir, { recursive: true, force: true });
-  } catch (e) {
-    // ignore cleanup errors
-  }
-
   return { result };
 }

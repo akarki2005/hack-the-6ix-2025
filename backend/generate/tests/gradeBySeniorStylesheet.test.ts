@@ -1,13 +1,17 @@
-import { gradeByCriteria } from "../gradeByCriteria";
-import { SeniorContext, CriterionScore, RepoFile, DiffFile } from "../../schemas/analysis";
-import { queryData } from "../../schemas/query";
+import { gradeBySeniorStyleSheet } from "../gradeBySeniorStyleSheet";
+import {
+  SeniorContext,
+  SeniorStyleSheet,
+  RepoFile,
+  DiffFile,
+} from "../../schemas/analysis";
 import { LLM, createLLMFromEnv } from "../../schemas/LLM";
-import * as utils from "../utils";
+import * as utils from "../utils"; // kept for symmetry with the other test
 
 import * as dotenv from "dotenv";
 dotenv.config();
 
-describe("gradeByCriteria", () => {
+describe("gradeBySeniorStyleSheet", () => {
   const mockFiles: RepoFile[] = [
     {
       path: "routes/api.ts",
@@ -44,23 +48,29 @@ export function getUserService() { return new UserService(); }`,
     },
   };
 
-  const mockCriteria: queryData[] = [
-    {
-      criteria_label: "Code Quality",
-      definition: "Code should be clean, readable, and follow best practices",
-      importance: 8,
+  const mockStyleSheet: SeniorStyleSheet = {
+    layering: "Separate routes, services, and validation layers.",
+    validation: "Use zod schemas for input validation.",
+    errorHandling: "Centralized error handling with custom helpers.",
+    naming: "camelCase for functions, PascalCase for classes.",
+    modularity: {
+      maxFunctionLoc: 30,
+      duplicationRule: "Avoid duplicate code; extract helpers.",
     },
-    {
-      criteria_label: "Security",
-      definition: "Code should follow security best practices and avoid vulnerabilities",
-      importance: 9,
+    testing: "Comprehensive unit and integration tests.",
+    logging: "Structured logging with context information.",
+    security: "Follow OWASP top 10 best practices.",
+    apiContract: "RESTful contracts with explicit status codes.",
+    exemplars: {},
+    quantitative: {
+      avgFunctionLoc: 15,
+      testsAdded: 5,
+      errorHelperUsage: 2,
+      validationCoveragePct: 80,
     },
-    {
-      criteria_label: "Performance",
-      definition: "Code should be efficient and performant",
-      importance: 6,
-    },
-  ];
+    namingExamples: ["getApi", "getUserService"],
+    rawSourceMeta: undefined,
+  };
 
   const mockLLM: LLM = {
     ai: {
@@ -80,19 +90,19 @@ export function getUserService() { return new UserService(); }`,
 
     const realLLM = createLLMFromEnv();
 
-    const result = await gradeByCriteria({
+    const result = await gradeBySeniorStyleSheet({
       context: mockContext,
-      criteria: mockCriteria,
+      seniorStyleSheet: mockStyleSheet,
       llmClient: realLLM,
     });
 
     console.log(result);
 
-    expect(result.length).toBe(3);
-    expect(result[0].name).toBe("Code Quality");
+    expect(result.length).toBe(9);
+    expect(result[0].name).toBe("Layering Architecture");
     expect(result[0].score).toBeGreaterThanOrEqual(0);
     expect(result[0].score).toBeLessThanOrEqual(100);
     expect(result[0].justification).toBeTruthy();
-    expect(result[0].weight).toBe(8);
+    expect(result[0].weight).toBe(10);
   }, 15000);
 });

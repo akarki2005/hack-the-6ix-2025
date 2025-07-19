@@ -8,6 +8,38 @@ export interface GradeBySeniorStyleSheetInput {
   llmClient?: LLM;
 }
 
+function safeParseJsonArray(raw: string): any[] | null {
+  if (!raw) return null;
+
+  // 1⃣ quick attempt – maybe it’s already valid JSON
+  try {
+    const direct = JSON.parse(raw);
+    if (Array.isArray(direct)) return direct;
+  } catch {
+    /* ignore – we’ll try a more tolerant strategy */
+  }
+
+  // 2⃣ remove common code-fence markers
+  let cleaned = raw.trim()
+    .replace(/```json/gi, "```")   // ```json → ```
+    .replace(/```/g, "");
+
+  // 3⃣ take everything between the **first** ‘[’ and the **last** ‘]’
+  const start = cleaned.indexOf("[");
+  const end   = cleaned.lastIndexOf("]");
+  if (start !== -1 && end !== -1 && end > start) {
+    cleaned = cleaned.slice(start, end + 1);
+    try {
+      const arr = JSON.parse(cleaned);
+      return Array.isArray(arr) ? arr : null;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  return null; // still couldn’t parse
+}
+
 export async function gradeBySeniorStyleSheet(
   props: GradeBySeniorStyleSheetInput
 ): Promise<CriterionScore[]> {
@@ -146,7 +178,7 @@ Respond with a JSON array containing one object for each criterion in the exact 
 
     // Try to parse the JSON array response
     try {
-      const parsed = JSON.parse(response);
+      const parsed = safeParseJsonArray(response);
       if (!Array.isArray(parsed)) {
         throw new Error("Response is not an array");
       }

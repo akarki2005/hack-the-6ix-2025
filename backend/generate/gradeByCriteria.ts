@@ -13,6 +13,39 @@ export interface GradeByCriteriaOutput {
   scores: CriterionScore[];
 }
 
+// Helper ─ strips markdown fences / prose and returns the first valid JSON array
+function safeParseJsonArray(raw: string): any[] | null {
+  if (!raw) return null;
+
+  // 1⃣ quick attempt – maybe it’s already valid JSON
+  try {
+    const direct = JSON.parse(raw);
+    if (Array.isArray(direct)) return direct;
+  } catch {
+    /* ignore – we’ll try a more tolerant strategy */
+  }
+
+  // 2⃣ remove common code-fence markers
+  let cleaned = raw.trim()
+    .replace(/```json/gi, "```")   // ```json → ```
+    .replace(/```/g, "");
+
+  // 3⃣ take everything between the **first** ‘[’ and the **last** ‘]’
+  const start = cleaned.indexOf("[");
+  const end   = cleaned.lastIndexOf("]");
+  if (start !== -1 && end !== -1 && end > start) {
+    cleaned = cleaned.slice(start, end + 1);
+    try {
+      const arr = JSON.parse(cleaned);
+      return Array.isArray(arr) ? arr : null;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  return null; // still couldn’t parse
+}
+
 export async function gradeByCriteria(
   props: GradeByCriteriaInput
 ): Promise<CriterionScore[]> {
@@ -84,39 +117,28 @@ Respond with a JSON array containing one object for each criterion in the exact 
 `;
 
     const response = await generate(llmClient.ai, prompt);
-    console.error("RESPONSE:", response);
 
     // Try to parse the JSON array response
-    try {
-      const parsed = JSON.parse(response);
-      if (!Array.isArray(parsed)) {
-        throw new Error("Response is not an array");
-      }
-
-      // Map the parsed response to CriterionScore format
-      const scores: CriterionScore[] = criteria.map((criterion, index) => {
-        const result = parsed.find(p => p.name === criterion.criteria_label) || parsed[index];
-
-        return {
-          name: criterion.criteria_label,
-          score: Math.max(0, Math.min(100, result?.score || 50)),
-          justification: result?.justification || "No justification provided",
-          suggestions: Array.isArray(result?.suggestions) ? result.suggestions : [],
-          weight: criterion.importance,
-        };
-      });
-
-      return scores;
-    } catch (parseError) {
-      // Fallback if JSON parsing fails - return default scores
-      return criteria.map(criterion => ({
-        name: criterion.criteria_label,
-        score: 75,
-        justification: `LLM response could not be parsed: ${response.slice(0, 200)}...`,
-        suggestions: ["Review the code manually for this criterion"],
-        weight: criterion.importance,
-      }));
+    const parsed = safeParseJsonArray(response);
+    if (!parsed) {
+      throw new Error("Unable to extract JSON array from LLM response");
     }
+
+    // Map the parsed response to CriterionScore format
+    const scores: CriterionScore[] = criteria.map((criterion, index) => {
+      const result =
+        parsed.find(p => p.name === criterion.criteria_label) || parsed[index];
+
+      return {
+        name: criterion.criteria_label,
+        score: Math.max(0, Math.min(100, result?.score ?? 50)),
+        justification: result?.justification ?? "No justification provided",
+        suggestions: Array.isArray(result?.suggestions) ? result.suggestions : [],
+        weight: criterion.importance,
+      };
+    });
+
+    return scores;
   } catch (error) {
     // Fallback for LLM errors - return default scores for all criteria
     return criteria.map(criterion => ({
