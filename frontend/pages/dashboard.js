@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getSubmissions } from '../src/utils/submissions';
 import Head from 'next/head';
+import { useUser } from '@auth0/nextjs-auth0/client';
 
 export default function Dashboard() {
+  const { user, isLoading } = useUser();
   const [submissions, setSubmissions] = useState([]);
   const [expandedSubmissions, setExpandedSubmissions] = useState(new Set());
 
@@ -52,10 +54,28 @@ export default function Dashboard() {
 
       <div className="min-h-screen bg-[var(--bg)]">
         {/* Navbar */}
-        <nav className="bg-white shadow-sm border-b border-gray-200">
+        <nav className="bg-white shadow-sm border-b border-gray-200 relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center items-center py-4">
+            <div className="flex justify-center items-center py-4 relative">
               <h1 className="text-3xl font-bold text-black">Hackthe6ix</h1>
+              {/* Logout button - top right */}
+              {!isLoading && user && (
+                <a
+                  href="/api/auth/logout"
+                  className="btn-secondary inline-block absolute right-0 top-1/2 -translate-y-1/2"
+                  style={{
+                    padding: '8px 16px',
+                    background: '#eb5757',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    textDecoration: 'none',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Log Out
+                </a>
+              )}
             </div>
           </div>
         </nav>
