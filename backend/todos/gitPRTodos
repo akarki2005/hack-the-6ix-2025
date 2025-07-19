@@ -1,3 +1,17 @@
-1. get pr link
-2. github clone
-3. 
+1. get github repo pr link input(url: string), output(ok:bool) DONE
+2. github clone locally to fetch file contexts (do we do this with the github api? or just a bash script?) output(repoRoot: str) DONE
+3. use the github api, fetch the following data: DONE
+   interface GenerateContextInput {
+   diffFiles: DiffFile[]; // from GitHub /compare or /pulls/:num/files
+   repoRoot: string; // local clone path
+   maxRelatedFiles?: number; // cap (e.g. 20)
+   relatedHops?: number; // import graph depth (default 1)
+   }
+   DiffFile schema: export const DiffFileSchema = z.object({
+   path: z.string(),
+   status: z.enum(["added", "removed", "modified", "renamed"]),
+   patch: z.string().optional(),
+   additions: z.number(),
+   deletions: z.number(),
+   previousPath: z.string().optional(),
+   });
