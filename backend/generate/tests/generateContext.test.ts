@@ -1,7 +1,6 @@
 import generateContext from "../generateContext";
 import * as utils from "../utils";
 import * as fs from "fs";
-import * as path from "path";
 import { DiffFile } from "../../schemas/analysis";
 
 jest.mock("fs");
