@@ -122,24 +122,56 @@ export default function SubmitPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus(null);
+  e.preventDefault();
+  setIsSubmitting(true);
+  setSubmitStatus(null);
 
-    try {
-      addSubmission(formData);
-      window.dispatchEvent(new Event('submissionsUpdated'));
+  try {
+    const response = await fetch('/api/assign-repos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: process.env.NEXT_PUBLIC_GITHUB_TOKEN, // You can hardcode for now if needed
+        templateOwner: formData.repoOwner,
+        templateRepo: formData.repoName,
+        baseRepoName: 'assignment',
+        yourUsername: formData.repoOwner,
+        studentList: formData.githubUsernames
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Repos created:', result.links);
       setSubmitStatus('success');
-      setTimeout(() => {
-        router.push('/');
-      }, 500);
-    } catch (error) {
-      console.error('Submission error:', error);
-      setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
+      window.dispatchEvent(new Event('submissionsUpdated'));
+      setTimeout(() => router.push('/'), 500);
+    } else {
+  let errorMsg = 'Unknown error';
+  try {
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const errorData = await response.json();
+      errorMsg = errorData?.message || JSON.stringify(errorData);
+    } else {
+      errorMsg = await response.text();
     }
-  };
+  } catch (parseError) {
+    console.error('Error parsing error response:', parseError);
+  }
+
+  console.error('Repo creation failed:', errorMsg);
+  setSubmitStatus('error');
+}
+  } catch (error) {
+    console.error('Submission error:', error);
+    setSubmitStatus('error');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const validateForm = () => {
     return (
