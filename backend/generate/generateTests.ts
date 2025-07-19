@@ -21,7 +21,9 @@ interface GenerateTestsOutput {
   executed?: TestResult; // if run
 }
 
-export async function generateTests(props: GenerateTestsInput): Promise<GenerateTestsOutput> {
+export async function generateTests(
+  props: GenerateTestsInput
+): Promise<GenerateTestsOutput> {
   const { context, dryRun = true, testDir, llmClient } = props;
   const changedFiles = context.diffFiles.map((f) => f.path);
   const relatedFiles = context.relatedFiles.filter((f) =>
@@ -54,10 +56,16 @@ export async function generateTests(props: GenerateTestsInput): Promise<Generate
     // Generate test content
     let testContent = "";
     if (llmClient && llmClient.ai) {
-      const prompt = `Write a Jest test file for the following code. Focus on exported functions.\n\nFile: ${file.path}\n${file.content.slice(0, 500)}`;
+      const prompt = `Write a Jest test file for the following code. Focus on exported functions.\n\nFile: ${
+        file.path
+      }\n${file.content.slice(0, 500)}`;
       testContent = await generate(llmClient.ai, prompt);
     } else {
-      testContent = `import { ${functions.join(", ")} } from '../${file.path.replace(/\.[^.]+$/, "")}';\n\ndescribe('${file.path}', () => {\n  it('should work', () => {\n    // TODO: add assertions\n  });\n});`;
+      testContent = `import { ${functions.join(
+        ", "
+      )} } from '../${file.path.replace(/\.[^.]+$/, "")}';\n\ndescribe('${
+        file.path
+      }', () => {\n  it('should work', () => {\n    // TODO: add assertions\n  });\n});`;
     }
     const testFile: RepoFile = {
       path: file.path.replace(/\.[^.]+$/, ".test.ts"),
