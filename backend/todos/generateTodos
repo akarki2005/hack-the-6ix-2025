@@ -3,7 +3,22 @@
    also return the tech stack used (eg: languages, libraries, frameworks, etc)
 2. generateTests DONE
    given purpose of senior pr + generateContext, generate appropriate tests for the given tech stack
-   run tests beforehand to make sure that they work
+
+- validateTests: run tests made by generateTests beforehand to make sure that they work
+
+Write tests to disk
+For each RepoFile in testFiles, write file.content to testDir/file.path.
+Run the test framework
+Use child_process.spawnSync or execa to run the test runner (e.g., jest, vitest, mocha) with flags to:
+Suppress interactive mode
+Return JSON (or parseable) output
+Use cwd = testDir
+Parse the output
+Extract:
+total, passed, failed
+For each failed test: name, message
+Return TestResult
+Return it in the shape of your schema.
 
 3. generateSeniorStyleSheet DONE
    given senior PR diffs, generate style sheet.
@@ -18,10 +33,10 @@
 
 4. gradeByCriteria
    given inserted user queries {name: str, definition: str, importance: int}, grade pr by given user criterias {name: str, grade: int}
-   return a dict of given scores 
+   return a dict of given scores
 5. gradeBySeniorStyleSheet
-   given senior style sheet, grade pr by how they satisfy the sheet {category: string, score: int} 
+   given senior style sheet, grade pr by how they satisfy the sheet {category: string, score: int}
 6. gradeByTests run tests, return success rate
 
-5. gradeByAll
+7. gradeByAll
    run all three grade functions

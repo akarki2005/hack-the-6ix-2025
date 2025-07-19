@@ -13,7 +13,6 @@ interface GenerateTestsOutput {
   proposedTests: RepoFile[]; // path + content (not yet committed)
   rationale: string;
   coverageTargets?: string[]; // e.g. functions/modules it aims to exercise
-  executed?: TestResult; // if run
 }
 
 export async function generateTests(
