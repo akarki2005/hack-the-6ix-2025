@@ -26,16 +26,34 @@ export const saveSubmissions = (submissions) => {
 // Add a new submission
 export const addSubmission = (submission) => {
   const submissions = getSubmissions();
+  // Support both old (emails) and new (githubUsernames/candidates) formats
+  let emailStatuses = [];
+  if (submission.emails && Array.isArray(submission.emails)) {
+    emailStatuses = submission.emails.map(email => ({
+      email: email,
+      submitted: false,
+      submittedAt: null
+    }));
+  } else if (submission.githubUsernames && Array.isArray(submission.githubUsernames)) {
+    // For new format, treat githubUsername as 'email' for status tracking
+    emailStatuses = submission.githubUsernames.map(username => ({
+      email: username,
+      submitted: false,
+      submittedAt: null
+    }));
+  } else if (submission.candidates && Array.isArray(submission.candidates)) {
+    emailStatuses = submission.candidates.map(cand => ({
+      email: cand.githubUsername || cand.email || '',
+      submitted: false,
+      submittedAt: null
+    }));
+  }
   const newSubmission = {
     ...submission,
     id: Date.now(), // Simple ID generation
     status: 'pending',
     createdAt: new Date().toISOString(),
-    emailStatuses: submission.emails.map(email => ({
-      email: email,
-      submitted: false,
-      submittedAt: null
-    }))
+    emailStatuses
   };
   const updatedSubmissions = [newSubmission, ...submissions]; // Add to beginning
   saveSubmissions(updatedSubmissions);
