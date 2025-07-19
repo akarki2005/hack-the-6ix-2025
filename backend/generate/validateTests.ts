@@ -32,12 +32,13 @@ async function runJestAndParse(testDir: string): Promise<TestResult> {
   try {
     const cliResult = await runCLI(cliArgv, [process.cwd()]);
     const results = cliResult.results;
+    console.log("results", results);
     let total = 0,
       passed = 0,
       failed = 0,
       failedTests: { name: string; message: string }[] = [];
     for (const suite of results.testResults || []) {
-      for (const assertion of (suite as any).assertionResults || []) {
+      for (const assertion of (suite as any).testResults || []) {
         total++;
         if (assertion.status === "passed") passed++;
         else if (assertion.status === "failed") {

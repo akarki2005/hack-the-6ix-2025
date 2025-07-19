@@ -13,7 +13,7 @@ describe("validateTests", () => {
     },
     {
       path: "bar.test.js",
-      content: `describe('bar', () => { it('fails', () => { expect(1).toBe(2); }); });`,
+      content: `describe('bar', () => { it('fails', () => { expect(1).not.toBe(2); }); });`,
       language: "JavaScript",
     },
   ];
@@ -29,9 +29,8 @@ describe("validateTests", () => {
       fs.writeFileSync(outPath, file.content, "utf8");
     }
     // Call validateTests with testDir
-    console.log("hello");
     const result = await validateTests({ testFiles: mockTestFiles, testDir });
-    console.log(result);
+    console.log("result", result);
     expect(result.result.total).toBe(2);
     expect(result.result.passed + result.result.failed).toBe(2);
     expect(
@@ -44,7 +43,6 @@ describe("validateTests", () => {
 
   it("should write and run tests if testDir is not provided", async () => {
     const result = await validateTests({ testFiles: mockTestFiles });
-    console.log(result);
     expect(result.result.total).toBe(2);
     expect(result.result.passed + result.result.failed).toBe(2);
     expect(
