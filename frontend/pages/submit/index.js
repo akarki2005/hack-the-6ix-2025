@@ -5,14 +5,15 @@ import Head from 'next/head';
 
 export default function SubmitPage() {
   const [formData, setFormData] = useState({
-    repoUrl: '',
-    emails: [], // keeps raw list for compatibility / dashboard
-    candidates: [], // new: { name, email }
+    repoOwner: '',
+    repoName: '',
+    githubUsernames: [], // keeps raw list for compatibility / dashboard
+    candidates: [], // new: { name, githubUsername }
     criteria: [], // Each criterion: { name, description, weight }
   });
 
   // State for candidate input fields
-  const [candidateInput, setCandidateInput] = useState({ name: '', email: '' });
+  const [candidateInput, setCandidateInput] = useState({ name: '', githubUsername: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const router = useRouter();
@@ -24,10 +25,17 @@ export default function SubmitPage() {
     weight: ''
   });
 
-  const handleRepoUrlChange = (e) => {
+  const handleRepoOwnerChange = (e) => {
     setFormData(prev => ({
       ...prev,
-      repoUrl: e.target.value
+      repoOwner: e.target.value
+    }));
+  };
+
+  const handleRepoNameChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      repoName: e.target.value
     }));
   };
 
@@ -45,27 +53,27 @@ export default function SubmitPage() {
 
   const addCandidate = () => {
     const trimmedName = candidateInput.name.trim();
-    const trimmedEmail = candidateInput.email.trim();
+    const trimmedUsername = candidateInput.githubUsername.trim();
 
-    // basic email regex for quick validation
-    const emailValid = /.+@.+\..+/.test(trimmedEmail);
+    // basic github username validation: alphanumeric, dashes, underscores, 1-39 chars
+    const usernameValid = /^[a-zA-Z0-9-]{1,39}$/.test(trimmedUsername);
 
-    if (trimmedName && emailValid && !formData.emails.includes(trimmedEmail)) {
+    if (trimmedName && usernameValid && !formData.githubUsernames.includes(trimmedUsername)) {
       setFormData(prev => ({
         ...prev,
-        candidates: [...prev.candidates, { name: trimmedName, email: trimmedEmail }],
-        emails: [...prev.emails, trimmedEmail], // maintain email list for compatibility
+        candidates: [...prev.candidates, { name: trimmedName, githubUsername: trimmedUsername }],
+        githubUsernames: [...prev.githubUsernames, trimmedUsername], // maintain username list for compatibility
       }));
 
-      setCandidateInput({ name: '', email: '' });
+      setCandidateInput({ name: '', githubUsername: '' });
     }
   };
 
   const removeCandidate = (indexToRemove) => {
     setFormData(prev => {
       const updatedCandidates = prev.candidates.filter((_, idx) => idx !== indexToRemove);
-      const updatedEmails = updatedCandidates.map(c => c.email);
-      return { ...prev, candidates: updatedCandidates, emails: updatedEmails };
+      const updatedUsernames = updatedCandidates.map(c => c.githubUsername);
+      return { ...prev, candidates: updatedCandidates, githubUsernames: updatedUsernames };
     });
   };
 
@@ -135,7 +143,8 @@ export default function SubmitPage() {
 
   const validateForm = () => {
     return (
-      formData.repoUrl.trim() &&
+      formData.repoOwner.trim() &&
+      formData.repoName.trim() &&
       formData.candidates.length > 0 &&
       formData.criteria.length > 0
     );
@@ -174,24 +183,34 @@ export default function SubmitPage() {
 
             <div className="card p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Repository URL Field */}
+                {/* Repository Owner and Name Fields */}
                 <div>
-                  <label htmlFor="repoUrl" className="block text-sm font-medium text-black mb-1">
-                    Repository URL *
+                  <label htmlFor="repoOwner" className="block text-sm font-medium text-black mb-1">
+                    Repository Owner *
                   </label>
-                  <p className="text-sm text-gray-500 mb-3">
-                    Enter the full HTTPS link to the GitHub repository you want to assess
-                  </p>
                   <input
-                    type="url"
-                    id="repoUrl"
-                    value={formData.repoUrl}
-                    onChange={handleRepoUrlChange}
-                    placeholder="https://github.com/username/repository"
+                    type="text"
+                    id="repoOwner"
+                    value={formData.repoOwner}
+                    onChange={handleRepoOwnerChange}
+                    placeholder="GitHub username or organization"
                     className="input-field"
                     required
                   />
-                  {/* info text moved above */}
+                </div>
+                <div className="mt-4">
+                  <label htmlFor="repoName" className="block text-sm font-medium text-black mb-1">
+                    Repository Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="repoName"
+                    value={formData.repoName}
+                    onChange={handleRepoNameChange}
+                    placeholder="Repository name"
+                    className="input-field"
+                    required
+                  />
                 </div>
 
                 {/* Candidate List Field */}
@@ -200,7 +219,7 @@ export default function SubmitPage() {
                     Candidate List *
                   </label>
                   <p className="text-sm text-gray-500 mb-3">
-                    Provide a name and email, then add each candidate to the list
+                    Provide a name and GitHub username, then add each candidate to the list
                   </p>
 
                   {/* Inputs for candidate */}
@@ -216,12 +235,12 @@ export default function SubmitPage() {
                     />
 
                     <input
-                      type="email"
-                      name="email"
-                      value={candidateInput.email}
+                      type="text"
+                      name="githubUsername"
+                      value={candidateInput.githubUsername}
                       onChange={handleCandidateInputChange}
                       onKeyDown={handleCandidateKeyDown}
-                      placeholder="Candidate email"
+                      placeholder="GitHub username"
                       className="input-field"
                     />
 
@@ -230,8 +249,8 @@ export default function SubmitPage() {
                       onClick={addCandidate}
                       disabled={
                         !candidateInput.name.trim() ||
-                        !/.+@.+\..+/.test(candidateInput.email.trim()) ||
-                        formData.emails.includes(candidateInput.email.trim())
+                        !/^[a-zA-Z0-9-]{1,39}$/.test(candidateInput.githubUsername.trim()) ||
+                        formData.githubUsernames.includes(candidateInput.githubUsername.trim())
                       }
                       className="btn-primary px-4 py-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
@@ -247,7 +266,7 @@ export default function SubmitPage() {
                           key={index}
                           className="flex items-center gap-1 bg-[var(--secondary)]/30 text-[var(--primary)] px-3 py-1 rounded-full text-sm"
                         >
-                          <span>{cand.name} — {cand.email}</span>
+                          <span>{cand.name} — {cand.githubUsername}</span>
                           <button
                             type="button"
                             onClick={() => removeCandidate(index)}

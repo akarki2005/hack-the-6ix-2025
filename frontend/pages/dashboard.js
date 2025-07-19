@@ -118,6 +118,31 @@ export default function Dashboard() {
               <div className="divide-y divide-gray-200">
                 {submissions.map((s) => {
                   const expanded = expandedSubmissions.has(s.id);
+                  // Support both old and new formats for compatibility
+                  const repoDisplay = s.repoOwner && s.repoName ? `${s.repoOwner}/${s.repoName}` : (s.repoUrl ? s.repoUrl.split('/').slice(-2).join('/') : '');
+                  // Build candidate list and statuses
+                  let candidateList = [];
+                  let statuses = [];
+                  if (s.candidates && s.candidates.length > 0) {
+                    candidateList = s.candidates;
+                    // Try to match status by githubUsername
+                    if (s.emailStatuses && Array.isArray(s.emailStatuses)) {
+                      statuses = candidateList.map(cand => {
+                        const statusObj = s.emailStatuses.find(es => es.email === (cand.githubUsername || cand.email));
+                        return statusObj ? statusObj.submitted : false;
+                      });
+                    } else {
+                      statuses = candidateList.map(() => false);
+                    }
+                  } else if (s.githubUsernames && Array.isArray(s.githubUsernames)) {
+                    candidateList = s.githubUsernames.map(username => ({ name: username }));
+                    statuses = s.emailStatuses && Array.isArray(s.emailStatuses)
+                      ? s.emailStatuses.map(es => es.submitted)
+                      : candidateList.map(() => false);
+                  } else {
+                    candidateList = [];
+                    statuses = [];
+                  }
                   return (
                     <div key={s.id} className="hover:bg-gray-50 transition-colors duration-200">
                       <div className="px-6 py-4">
@@ -125,11 +150,11 @@ export default function Dashboard() {
                           <div className="flex items-center">
                             <div className="ml-4">
                               <div className="flex items-center">
-                                <p className="text-sm font-medium text-black truncate">{s.repoUrl.split('/').slice(-2).join('/')}</p>
+                                <p className="text-sm font-medium text-black truncate">{repoDisplay}</p>
                                 <span className={`ml-2 ${getStatusColor(s.status)}`}>{s.status}</span>
                               </div>
                               <div className="mt-1 text-sm text-gray-500">
-                                {s.emails.length} candidates • {formatDate(s.createdAt)}
+                                {candidateList.length} candidates • {formatDate(s.createdAt)}
                               </div>
                             </div>
                           </div>
@@ -143,14 +168,14 @@ export default function Dashboard() {
                           <div className="mt-4 space-y-4">
                             {/* Candidates Section */}
                             <div>
-                              <h4 className="text-sm font-medium text-black mb-3">Candidates ({s.emails.length} candidate{s.emails.length === 1 ? '' : 's'})</h4>
+                              <h4 className="text-sm font-medium text-black mb-3">Candidates ({candidateList.length} candidate{candidateList.length === 1 ? '' : 's'})</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                {(s.emailStatuses || s.emails.map(email => ({ email, submitted: false }))).map((emailStatus, index) => (
-                                  <div key={index} className={`p-3 rounded-md border ${emailStatus.submitted ? 'bg-[var(--secondary)]/20 border-[var(--secondary)]/40' : 'bg-red-50 border-red-200'}`}>
+                                {candidateList.map((cand, index) => (
+                                  <div key={index} className={`p-3 rounded-md border ${statuses[index] ? 'bg-[var(--secondary)]/20 border-[var(--secondary)]/40' : 'bg-red-50 border-red-200'}`}>
                                     <div className="flex items-center justify-between">
-                                      <span className="text-sm text-black truncate">{emailStatus.email}</span>
-                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${emailStatus.submitted ? 'bg-[var(--secondary)]/30 text-[var(--primary)]' : 'bg-red-100 text-red-800'}`}>
-                                        {emailStatus.submitted ? 'Submitted' : 'Incomplete'}
+                                      <span className="text-sm text-black truncate">{cand.name}</span>
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statuses[index] ? 'bg-[var(--secondary)]/30 text-[var(--primary)]' : 'bg-red-100 text-red-800'}`}>
+                                        {statuses[index] ? 'Submitted' : 'Incomplete'}
                                       </span>
                                     </div>
                                   </div>
@@ -162,7 +187,7 @@ export default function Dashboard() {
                             <div>
                               <h4 className="text-sm font-medium text-black mb-2">Repository Details</h4>
                               <div className="bg-white p-3 rounded-md border border-gray-200">
-                                <p className="text-sm text-black break-all">{s.repoUrl}</p>
+                                <p className="text-sm text-black break-all">{repoDisplay}</p>
                                 <p className="text-xs text-gray-500 mt-1">Submitted on {formatDate(s.createdAt)}</p>
                               </div>
                             </div>
