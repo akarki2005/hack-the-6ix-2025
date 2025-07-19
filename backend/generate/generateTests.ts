@@ -1,9 +1,4 @@
-import {
-  RepoFile,
-  SeniorContext,
-  SeniorStyleSheet,
-  TestResult,
-} from "../schemas/analysis";
+import { RepoFile, SeniorContext, TestResult } from "../schemas/analysis";
 import { LLM } from "../schemas/LLM";
 import { generate } from "./utils";
 
