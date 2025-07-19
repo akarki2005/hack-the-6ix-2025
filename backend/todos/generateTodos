@@ -1,0 +1,42 @@
+1. generateSeniorContext DONE
+   given all diff files of senior PR (), identify all imported modules (do Basic Static Import Graph and endpoint mapping), return all text from those imported files combined as a json {files: [filename: "", content: ""]}
+   also return the tech stack used (eg: languages, libraries, frameworks, etc)
+2. generateTests DONE
+   given purpose of senior pr + generateContext, generate appropriate tests for the given tech stack
+
+- validateTests: run tests made by generateTests beforehand to make sure that they work
+
+Write tests to disk
+For each RepoFile in testFiles, write file.content to testDir/file.path.
+Run the test framework
+Use child_process.spawnSync or execa to run the test runner (e.g., jest, vitest, mocha) with flags to:
+Suppress interactive mode
+Return JSON (or parseable) output
+Use cwd = testDir
+Parse the output
+Extract:
+total, passed, failed
+For each failed test: name, message
+Return TestResult
+Return it in the shape of your schema.
+
+3. generateSeniorStyleSheet DONE
+   given senior PR diffs, generate style sheet.
+   eg: {
+   "modularity_exemplars": [{"file":"services/projectService.ts","code":"..."}],
+   "error_handling_pattern": "Uses makeError(code,msg) + centralized handler",
+   "validation_pattern": "validateInput(schema, payload) before service",
+   "avg_function_loc": 18,
+   "tests_added": 7,
+   "naming_examples": ["createProject", "getProjectById"]
+   }
+
+4. gradeByCriteria
+   given inserted user queries {name: str, definition: str, importance: int}, grade pr by given user criterias {name: str, grade: int}
+   return a dict of given scores
+5. gradeBySeniorStyleSheet
+   given senior style sheet, grade pr by how they satisfy the sheet {category: string, score: int}
+6. gradeByTests run tests, return success rate
+
+7. gradeByAll
+   run all three grade functions
