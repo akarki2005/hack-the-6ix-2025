@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     ['opened'].includes(body.action) &&
     body.pull_request.base.ref === 'main'
   ) {
-
+    console.log(body);
 
   }
 
