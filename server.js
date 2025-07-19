@@ -1,13 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { createReposFromTemplate } = require('./frontend/pages/api/auth/github_utils');
+const { createReposFromTemplate } = require('./frontend/pages/api/github_utils');
 
 const app = express();
 const PORT = 3000;
 
 app.use(bodyParser.json());
 
-app.post('/api/auth/assign-repos', async (req, res) => {
+app.post('/api/assign-repos', async (req, res) => {
     const {
         token,
         templateOwner,

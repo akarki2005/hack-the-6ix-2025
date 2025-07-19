@@ -1,4 +1,4 @@
-import { createReposFromTemplate } from './githubRepoUtils';
+import { createReposFromTemplate } from './github_utils';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
