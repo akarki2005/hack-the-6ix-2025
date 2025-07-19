@@ -1,10 +1,15 @@
 {
   "dependencies": {
+    "axios": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "http": "^0.0.1-security",
-    "zod": "^4.0.5",
-    "mongoose": "^8.3.0"
-  }
+    "mongoose": "^8.3.0",
+    "zod": "^4.0.5"
+  },
+  "scripts": {
+  "dev": "node server.js"
 }
+}
+
