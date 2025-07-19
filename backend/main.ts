@@ -4,8 +4,8 @@ import http from "http";
 // for ws
 const server = http.createServer(app);
 
-const PORT = 3000;
+const PORT = process.env.API_PORT ? Number(process.env.API_PORT) : 5000;
 
 server.listen(PORT, () => {
-  console.log("api running on http://localhost:3000");
+  console.log(`API running on http://localhost:${PORT}`);
 });
