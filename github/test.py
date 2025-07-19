@@ -12,8 +12,9 @@ def main():
     github_username = config["Github_Username"]
     template_repo_name = config["repo_to_fork"]  # This should be JUST the repo name (not a URL)
     template_owner = config["TEMPLATE_OWNER"]
+    #TODO: Change this eventually
     new_repo_name = "hackthesixnewrepo"  # You can make this dynamic too
-
+    students = config["Github_Students"]
     # Debug print
     print("Token:", token)
     print("GitHub Username:", github_username)
@@ -26,7 +27,7 @@ def main():
         template_owner,
         template_repo_name,
         new_repo_name,
-        github_username,"utcjcao",
+        github_username,students,
         private=True
     )
 

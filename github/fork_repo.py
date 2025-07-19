@@ -1,7 +1,9 @@
 import requests
 import json
 import time
+import random, string;
 
+# This function makes a default branch.
 def wait_for_default_branch(token, owner, repo_name, branch="main", timeout=15):
     url = f"https://api.github.com/repos/{owner}/{repo_name}/git/ref/heads/{branch}"
     headers = {
@@ -20,6 +22,7 @@ def wait_for_default_branch(token, owner, repo_name, branch="main", timeout=15):
     print("❌ Timed out waiting for branch to initialize.")
     return False
 
+## After we have a default branch, we can create a branch for our user.
 def create_branch_from_main(token, repo_owner, repo_name, new_branch_name, base_branch="main", timeout=20):
     headers = {
         "Authorization": f"token {token}",
@@ -67,7 +70,7 @@ def create_branch_from_main(token, repo_owner, repo_name, new_branch_name, base_
         print(f"❌ Failed to create branch '{new_branch_name}': {create_response.status_code}")
         print(create_response.json())
 
-
+## This function takes the new repo and addes a collaborator to it.
 def add_collaborator_to_repo(token, repo_owner, repo_name,collaborator_username, permissions="push"):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/collaborators/{collaborator_username}"
 
@@ -84,38 +87,55 @@ def add_collaborator_to_repo(token, repo_owner, repo_name,collaborator_username,
     response = requests.put(url, headers=headers, json=payload)
     if response.status_code in [201, 204]:
         print(f" {collaborator_username} invited successfully.")
-        if wait_for_default_branch(token, repo_owner, "hackthesixnewrepo", "main"):
-            create_branch_from_main(token, repo_owner, "hackthesixnewrepo", "branch-<student>", base_branch="main")
+        ## If adding the collaborator was successful, we are going to wait for a default branch.
+        if wait_for_default_branch(token, repo_owner, repo_name, "main"):
+            create_branch_from_main(token, repo_owner, repo_name, "branch-<student>", base_branch="main")
         
     else:
         print(f"Failed to invite {collaborator_username}. Status {response.status_code}")
         print(response.json())
 
 
+def create_repo_name(new_repo_name):
+    repo_name = new_repo_name+ '_'+''.join(random.choices(string.ascii_lowercase, k=5))
+
+    return repo_name
+
+
 ## This function takes in a template repo, as well as a new repo name
 ## as well as the 
 def create_repo_from_template(token, template_owner, template_repo, 
                               new_repo_name, your_username, colab_username,private=True):
+    ## url to generate the repo.
     url = f"https://api.github.com/repos/{template_owner}/{template_repo}/generate"
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github+json"
     }
-    payload = {
-        "owner": your_username,
-        "name": new_repo_name,
-        "private": private,
-        "include_all_branches": False
-    }
-    print(f"📦 Creating repo '{new_repo_name}' from template '{template_owner}/{template_repo}'...")
-    response = requests.post(url, headers=headers, data=json.dumps(payload))
-    if response.status_code == 201:
-        print(f"Repo created: https://github.com/{your_username}/{new_repo_name}")
-        add_collaborator_to_repo(token,template_owner,new_repo_name,colab_username,"push")
-        return f"https://github.com/{your_username}/{new_repo_name}"
-    else:
-        print("Failed to create repo from template:")
-        print("Status Code:", response.status_code)
-        print(response.json())
-        return None
-    
+    student_repo_links = []
+    for students in colab_username:
+        print(students)
+        newer_repo_name = create_repo_name(new_repo_name)
+        ##TODO: create a random string of characters new repo name.
+        payload = {
+            "owner": your_username,
+            "name": newer_repo_name,
+            "private": private,
+            "include_all_branches": False
+        }
+        print(f"📦 Creating repo '{newer_repo_name}' from template '{template_owner}/{template_repo}'...")
+        ## sends a post request to github to create the repo.
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        if response.status_code == 201:
+            print(f"Repo created: https://github.com/{your_username}/{newer_repo_name}")
+
+            ## This is where we add the collaborators to the repo.
+            add_collaborator_to_repo(token,template_owner,newer_repo_name,students,"push")
+            student_repo_links.append(f"https://github.com/{your_username}/{newer_repo_name}")
+            
+        else:
+            print("Failed to create repo from template:")
+            print("Status Code:", response.status_code)
+            print(response.json())
+            return None
+        
