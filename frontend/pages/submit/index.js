@@ -6,12 +6,23 @@ import Head from 'next/head';
 export default function SubmitPage() {
   const [formData, setFormData] = useState({
     repoUrl: '',
-    emails: []
+    emails: [], // keeps raw list for compatibility / dashboard
+    candidates: [], // new: { name, email }
+    criteria: [], // Each criterion: { name, description, weight }
   });
-  const [emailInput, setEmailInput] = useState('');
+
+  // State for candidate input fields
+  const [candidateInput, setCandidateInput] = useState({ name: '', email: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const router = useRouter();
+
+  // State for the criterion inputs
+  const [criteriaInput, setCriteriaInput] = useState({
+    name: '',
+    description: '',
+    weight: ''
+  });
 
   const handleRepoUrlChange = (e) => {
     setFormData(prev => ({
@@ -20,32 +31,85 @@ export default function SubmitPage() {
     }));
   };
 
-  const handleEmailInputChange = (e) => {
-    setEmailInput(e.target.value);
+  const handleCandidateInputChange = (e) => {
+    const { name, value } = e.target;
+    setCandidateInput(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEmailInputKeyDown = (e) => {
+  const handleCandidateKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addEmail();
+      addCandidate();
     }
   };
 
-  const addEmail = () => {
-    const email = emailInput.trim();
-    if (email && !formData.emails.includes(email)) {
+  const addCandidate = () => {
+    const trimmedName = candidateInput.name.trim();
+    const trimmedEmail = candidateInput.email.trim();
+
+    // basic email regex for quick validation
+    const emailValid = /.+@.+\..+/.test(trimmedEmail);
+
+    if (trimmedName && emailValid && !formData.emails.includes(trimmedEmail)) {
       setFormData(prev => ({
         ...prev,
-        emails: [...prev.emails, email]
+        candidates: [...prev.candidates, { name: trimmedName, email: trimmedEmail }],
+        emails: [...prev.emails, trimmedEmail], // maintain email list for compatibility
       }));
-      setEmailInput('');
+
+      setCandidateInput({ name: '', email: '' });
     }
   };
 
-  const removeEmail = (emailToRemove) => {
-    setFormData(prev => ({
+  const removeCandidate = (indexToRemove) => {
+    setFormData(prev => {
+      const updatedCandidates = prev.candidates.filter((_, idx) => idx !== indexToRemove);
+      const updatedEmails = updatedCandidates.map(c => c.email);
+      return { ...prev, candidates: updatedCandidates, emails: updatedEmails };
+    });
+  };
+
+  const handleCriteriaInputChange = (e) => {
+    const { name, value } = e.target;
+    setCriteriaInput((prev) => ({
       ...prev,
-      emails: prev.emails.filter(email => email !== emailToRemove)
+      [name]: value,
+    }));
+  };
+
+  const addCriterion = () => {
+    const { name, description, weight } = criteriaInput;
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+    const weightNum = Number(weight);
+
+    if (
+      trimmedName &&
+      trimmedDescription &&
+      weightNum >= 1 &&
+      weightNum <= 10
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        criteria: [
+          ...prev.criteria,
+          {
+            name: trimmedName,
+            description: trimmedDescription,
+            weight: weightNum,
+          },
+        ],
+      }));
+
+      // Clear inputs
+      setCriteriaInput({ name: '', description: '', weight: '' });
+    }
+  };
+
+  const removeCriterion = (indexToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      criteria: prev.criteria.filter((_, idx) => idx !== indexToRemove),
     }));
   };
 
@@ -70,24 +134,28 @@ export default function SubmitPage() {
   };
 
   const validateForm = () => {
-    return formData.repoUrl.trim() && formData.emails.length > 0;
+    return (
+      formData.repoUrl.trim() &&
+      formData.candidates.length > 0 &&
+      formData.criteria.length > 0
+    );
   };
 
   return (
     <>
       <Head>
-        <title>Hackthe6ix - Submit Repository</title>
-        <meta name="description" content="Submit your repository for processing" />
+        <title>Hackthe6ix - Create Assessment</title>
+        <meta name="description" content="Create a new assessment by specifying repository, candidates and criteria" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[var(--bg)]">
         {/* Navbar */}
         <nav className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
+            <div className="flex justify-center items-center py-4">
               <div className="flex items-center">
-                <h1 className="text-xl font-bold text-black">Hackthe6ix</h1>
+                <h1 className="text-3xl font-bold text-black">Hackthe6ix</h1>
               </div>
             </div>
           </div>
@@ -97,10 +165,10 @@ export default function SubmitPage() {
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-black mb-2">
-                Repository Submission
+                Create Assessment
               </h1>
               <p className="text-gray-600">
-                Submit your repository URL and email list for processing
+                Provide the repository URL, your list of candidates, and evaluation criteria to create a new assessment.
               </p>
             </div>
 
@@ -108,9 +176,12 @@ export default function SubmitPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Repository URL Field */}
                 <div>
-                  <label htmlFor="repoUrl" className="block text-sm font-medium text-black mb-2">
+                  <label htmlFor="repoUrl" className="block text-sm font-medium text-black mb-1">
                     Repository URL *
                   </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Enter the full HTTPS link to the GitHub repository you want to assess
+                  </p>
                   <input
                     type="url"
                     id="repoUrl"
@@ -120,48 +191,67 @@ export default function SubmitPage() {
                     className="input-field"
                     required
                   />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Enter the full URL to your repository
-                  </p>
+                  {/* info text moved above */}
                 </div>
 
-                {/* Email List Field */}
+                {/* Candidate List Field */}
                 <div>
-                  <label htmlFor="emailInput" className="block text-sm font-medium text-black mb-2">
-                    Email List *
+                  <label className="block text-sm font-medium text-black mb-1">
+                    Candidate List *
                   </label>
-                  <div className="relative">
+                  <p className="text-sm text-gray-500 mb-3">
+                    Provide a name and email, then add each candidate to the list
+                  </p>
+
+                  {/* Inputs for candidate */}
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      name="name"
+                      value={candidateInput.name}
+                      onChange={handleCandidateInputChange}
+                      onKeyDown={handleCandidateKeyDown}
+                      placeholder="Candidate name"
+                      className="input-field"
+                    />
+
                     <input
                       type="email"
-                      id="emailInput"
-                      value={emailInput}
-                      onChange={handleEmailInputChange}
-                      onKeyDown={handleEmailInputKeyDown}
-                      placeholder="Type email and press Enter"
-                      className="input-field pr-20"
+                      name="email"
+                      value={candidateInput.email}
+                      onChange={handleCandidateInputChange}
+                      onKeyDown={handleCandidateKeyDown}
+                      placeholder="Candidate email"
+                      className="input-field"
                     />
+
                     <button
                       type="button"
-                      onClick={addEmail}
-                      disabled={!emailInput.trim()}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                      onClick={addCandidate}
+                      disabled={
+                        !candidateInput.name.trim() ||
+                        !/.+@.+\..+/.test(candidateInput.email.trim()) ||
+                        formData.emails.includes(candidateInput.email.trim())
+                      }
+                      className="btn-primary px-4 py-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
-                      Add
+                      Add Candidate
                     </button>
                   </div>
-                  {/* Email Tags */}
-                  {formData.emails.length > 0 && (
+
+                  {/* Candidate Chips */}
+                  {formData.candidates.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {formData.emails.map((email, index) => (
+                      {formData.candidates.map((cand, index) => (
                         <div
                           key={index}
-                          className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                          className="flex items-center gap-1 bg-[var(--secondary)]/30 text-[var(--primary)] px-3 py-1 rounded-full text-sm"
                         >
-                          <span>{email}</span>
+                          <span>{cand.name} — {cand.email}</span>
                           <button
                             type="button"
-                            onClick={() => removeEmail(email)}
-                            className="ml-1 text-green-600 hover:text-green-800 focus:outline-none transition-colors duration-200"
+                            onClick={() => removeCandidate(index)}
+                            className="ml-1 text-[var(--primary)] hover:text-[var(--primary-hover)] focus:outline-none transition-colors duration-200"
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 4.293a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -171,9 +261,100 @@ export default function SubmitPage() {
                       ))}
                     </div>
                   )}
-                  <p className="mt-1 text-sm text-gray-500">
-                    Type an email address and press Enter to add it to the list
+                  {/* info text moved above */}
+                </div>
+
+                {/* Criteria List Field */}
+                <div>
+                  <label htmlFor="criteriaName" className="block text-sm font-medium text-black mb-1">
+                    Criteria List *
+                  </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Provide a name, description and weight (1-10) for each criterion, then add it to the list
                   </p>
+
+                  {/* Inputs for criterion */}
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      id="criteriaName"
+                      name="name"
+                      value={criteriaInput.name}
+                      onChange={handleCriteriaInputChange}
+                      placeholder="Criterion name"
+                      className="input-field"
+                    />
+
+                    <textarea
+                      id="criteriaDescription"
+                      name="description"
+                      value={criteriaInput.description}
+                      onChange={handleCriteriaInputChange}
+                      placeholder="Criterion description"
+                      rows={2}
+                      className="input-field"
+                    />
+
+                    <input
+                      type="number"
+                      id="criteriaWeight"
+                      name="weight"
+                      value={criteriaInput.weight}
+                      onChange={handleCriteriaInputChange}
+                      placeholder="Weight (1 - 10)"
+                      min={1}
+                      max={10}
+                      className="input-field"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={addCriterion}
+                      disabled={
+                        !criteriaInput.name.trim() ||
+                        !criteriaInput.description.trim() ||
+                        !(Number(criteriaInput.weight) >= 1 && Number(criteriaInput.weight) <= 10)
+                      }
+                      className="btn-primary px-4 py-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      Add Criterion
+                    </button>
+                  </div>
+
+                  {/* Criteria Items */}
+                  {formData.criteria.length > 0 && (
+                    <ul className="mt-4 space-y-2">
+                      {formData.criteria.map((criterion, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start justify-between bg-[var(--primary)]/10 border border-[var(--primary)]/30 rounded-md p-3"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-[var(--primary)]">
+                              {criterion.name} (Weight: {criterion.weight})
+                            </p>
+                            <p className="text-sm text-[var(--primary)]/80">
+                              {criterion.description}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCriterion(index)}
+                            className="ml-3 text-[var(--primary)] hover:text-[var(--primary-hover)] focus:outline-none transition-colors duration-200"
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 4.293a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {/* info text moved above */}
                 </div>
 
                 {/* Submit Button */}
