@@ -23,7 +23,7 @@ async function runJestAndParse(testDir: string): Promise<TestResult> {
   const cliArgv = {
     _: testFilesInDir,
     runInBand: true,
-    json: true,
+    json: false,
     noCache: true,
     silent: true,
     $0: "jest",

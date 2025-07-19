@@ -1,4 +1,5 @@
 import { RepoFile, SeniorContext, TestResult } from "../schemas/analysis";
+import validateTests from "./validateTests";
 
 interface GradeByTestsInput {
   context: SeniorContext;
@@ -11,8 +12,10 @@ export async function gradeByTests(
 ): Promise<TestResult> {
   if (!tests?.length) return { total: 0, passed: 0, failed: 0 };
 
-  //validate tests
-  const total = tests?.length ?? 0;
+  const { result } = await validateTests({
+    testFiles: tests,
+  });
 
-  return { total, passed: 0, failed: 0, durationMs: 0, failedTests: [] };
+  // Map/return only the required fields for TestResult
+  return result;
 }
