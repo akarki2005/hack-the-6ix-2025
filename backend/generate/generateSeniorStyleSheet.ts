@@ -44,9 +44,9 @@ export interface SeniorStyleSheet {
   rawSourceMeta?: { prNumber?: number; baseRef?: string; headRef?: string };
 }
 
-export function GenerateSeniorStyleSheet(
+export async function GenerateSeniorStyleSheet(
   props: GenerateSeniorStyleSheetInput
-): SeniorStyleSheet {
+): Promise<SeniorStyleSheet> {
   const {
     seniorContext,
     exemplarSelectors = {},
@@ -138,136 +138,6 @@ export function GenerateSeniorStyleSheet(
   });
 
   // Style fields (use LLM if provided, else heuristics)
-  function summarize(field: string): string {
-    if (llmClient) {
-      // TODO: Call LLM for summary (not implemented in this mock)
-      return `LLM summary for ${field}`;
-    }
-    // Heuristic fallback
-    switch (field) {
-      case "layering":
-        return "Uses clear separation of concerns with routes, services, and validation.";
-      case "validation":
-        return "Validation is performed using schema libraries and explicit checks.";
-      case "errorHandling":
-        return "Error handling uses helpers and try/catch blocks.";
-      case "naming":
-        return "Naming follows camelCase for functions and PascalCase for classes.";
-      case "testing":
-        return "Tests are present for most modules, using describe/it blocks.";
-      case "logging":
-        return "Logging is performed using console or logger libraries.";
-      case "security":
-        return "Security checks are present for user input and API endpoints.";
-      case "apiContract":
-        return "API contracts are defined via route handlers and validation schemas.";
-      default:
-        return "Standard practice.";
-    }
-  }
-
-  return {
-    layering: summarize("layering"),
-    validation: summarize("validation"),
-    errorHandling: summarize("errorHandling"),
-    naming: summarize("naming"),
-    modularity: {
-      maxFunctionLoc: Math.max(...allFunctionLoc, 0),
-      duplicationRule: "Avoid duplicate code by extracting helpers.",
-    },
-    testing: summarize("testing"),
-    logging: summarize("logging"),
-    security: summarize("security"),
-    apiContract: summarize("apiContract"),
-    exemplars,
-    quantitative: {
-      avgFunctionLoc,
-      testsAdded,
-      errorHelperUsage,
-      validationCoveragePct,
-    },
-    namingExamples,
-    rawSourceMeta: undefined,
-  };
-}
-
-export async function GenerateSeniorStyleSheetAsync(
-  props: GenerateSeniorStyleSheetInput
-): Promise<SeniorStyleSheet> {
-  const {
-    seniorContext,
-    exemplarSelectors = {},
-    llmClient,
-    maxFunctionLocThreshold = 50,
-  } = props;
-  const { relatedFiles } = seniorContext;
-
-  // (reuse all helpers from the sync version)
-  function getFunctionLengths(content: string): number[] {
-    const functionRegex =
-      /function\s+\w+\s*\([^)]*\)\s*{([\s\S]*?)}|const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*{([\s\S]*?)}|([a-zA-Z0-9_]+)\s*:\s*\([^)]*\)\s*=>\s*{([\s\S]*?)}|([a-zA-Z0-9_]+)\s*\([^)]*\)\s*{([\s\S]*?)};/g;
-    const matches = content.matchAll(functionRegex);
-    const lengths: number[] = [];
-    for (const match of matches) {
-      const body = match[1] || match[2] || match[4] || match[6] || "";
-      if (body) {
-        lengths.push(body.split("\n").length);
-      }
-    }
-    return lengths;
-  }
-  function isTestFile(file: RepoFile): boolean {
-    return /test|spec/i.test(file.path) || /describe\s*\(/.test(file.content);
-  }
-  function isRouteFile(file: RepoFile): boolean {
-    return /router\.(get|post|put|delete|patch)/.test(file.content);
-  }
-  function isValidationFile(file: RepoFile): boolean {
-    return /zod|joi|yup|validate/.test(file.content);
-  }
-  function isServiceFile(file: RepoFile): boolean {
-    return (
-      /service|usecase|logic/.test(file.path) ||
-      /class\s+\w+Service/.test(file.content)
-    );
-  }
-
-  let allFunctionLoc: number[] = [];
-  let testsAdded = 0;
-  let errorHelperUsage = 0;
-  let validationCoverage = 0;
-  let validationFiles = 0;
-  relatedFiles.forEach((file) => {
-    const functionLocs = getFunctionLengths(file.content);
-    allFunctionLoc.push(...functionLocs);
-    if (isTestFile(file)) testsAdded++;
-    if (isValidationFile(file)) {
-      validationFiles++;
-      if (/validate/.test(file.content)) validationCoverage++;
-    }
-    if (/errorHelper|handleError/.test(file.content)) errorHelperUsage++;
-  });
-  const avgFunctionLoc = allFunctionLoc.length
-    ? allFunctionLoc.reduce((a, b) => a + b, 0) / allFunctionLoc.length
-    : 0;
-  const validationCoveragePct = validationFiles
-    ? (validationCoverage / validationFiles) * 100
-    : 0;
-  const exemplars = {
-    route: relatedFiles.find(isRouteFile) || relatedFiles[0],
-    service: relatedFiles.find(isServiceFile) || relatedFiles[0],
-    test: relatedFiles.find(isTestFile) || relatedFiles[0],
-    validation: relatedFiles.find(isValidationFile) || relatedFiles[0],
-  };
-  const namingExamples: string[] = [];
-  relatedFiles.forEach((file) => {
-    const exportFuncRegex = /export\s+function\s+(\w+)/g;
-    let match;
-    while ((match = exportFuncRegex.exec(file.content))) {
-      namingExamples.push(match[1]);
-    }
-  });
-
   async function summarize(field: string): Promise<string> {
     if (llmClient && llmClient.ai) {
       // Compose a prompt for the LLM

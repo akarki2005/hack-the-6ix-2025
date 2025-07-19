@@ -95,5 +95,5 @@ describe("generateTests", () => {
     });
     console.log("llm result", result.proposedTests[0].content);
     expect(result.proposedTests[0].content).toBeTruthy();
-  });
+  }, 50000);
 });

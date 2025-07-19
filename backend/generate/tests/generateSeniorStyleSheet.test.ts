@@ -1,6 +1,5 @@
 import {
   GenerateSeniorStyleSheet,
-  GenerateSeniorStyleSheetAsync,
 } from "../generateSeniorStyleSheet";
 import { SeniorContext, RepoFile } from "../../schemas/analysis";
 import { createLLMFromEnv } from "../../schemas/LLM";
@@ -57,8 +56,8 @@ export function validateUser(u) { return userSchema.parse(u); }`,
     },
   };
 
-  it("should generate a style sheet with correct metrics and exemplars", () => {
-    const result = GenerateSeniorStyleSheet({ seniorContext: mockContext });
+  it("should generate a style sheet with correct metrics and exemplars", async () => {
+    const result = await GenerateSeniorStyleSheet({ seniorContext: mockContext });
     expect(result.quantitative.testsAdded).toBe(1);
     expect(result.quantitative.errorHelperUsage).toBe(1);
     expect(result.quantitative.validationCoveragePct).toBeGreaterThan(0);
@@ -72,7 +71,7 @@ export function validateUser(u) { return userSchema.parse(u); }`,
     expect(result.namingExamples).toContain("getUserService");
   });
 
-  it("should use fallback exemplars if no match is found", () => {
+  it("should use fallback exemplars if no match is found", async () => {
     const minimalContext: SeniorContext = {
       diffFiles: [],
       relatedFiles: [
@@ -90,7 +89,7 @@ export function validateUser(u) { return userSchema.parse(u); }`,
         tooling: [],
       },
     };
-    const result = GenerateSeniorStyleSheet({ seniorContext: minimalContext });
+    const result = await GenerateSeniorStyleSheet({ seniorContext: minimalContext });
     expect(result.exemplars.route.path).toBe("misc/other.ts");
     expect(result.exemplars.service.path).toBe("misc/other.ts");
     expect(result.exemplars.test.path).toBe("misc/other.ts");
@@ -103,7 +102,7 @@ export function validateUser(u) { return userSchema.parse(u); }`,
       return;
     }
     const llm = createLLMFromEnv();
-    const result = await GenerateSeniorStyleSheetAsync({
+    const result = await GenerateSeniorStyleSheet({
       seniorContext: mockContext,
       llmClient: llm,
     });

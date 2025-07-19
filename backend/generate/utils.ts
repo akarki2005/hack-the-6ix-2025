@@ -37,13 +37,12 @@ export async function generate(
   ai: GoogleGenAI,
   query: string
 ): Promise<string> {
-  return "yes";
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash-001",
       contents: query,
     });
-    return response.text ?? "aigenerate";
+    return response.text ?? "llm failed to generate";
   } catch (err) {
     if (err instanceof Error) {
       return err.message;
