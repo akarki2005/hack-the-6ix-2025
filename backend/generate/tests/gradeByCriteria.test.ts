@@ -316,6 +316,8 @@ export function getUserService() { return new UserService(); }`,
   });
 
   it("should use real LLM if API key is available", async () => {
+    console.log("GEMINI_API_KEY exists:", !!process.env.GEMINI_API_KEY);
+
     if (!process.env.GEMINI_API_KEY) {
       console.warn("GEMINI_API_KEY not set, skipping real LLM test");
       return;
@@ -335,6 +337,8 @@ export function getUserService() { return new UserService(); }`,
       criteria: singleCriterion,
       llmClient: realLLM,
     });
+
+    console.error("RESULT:", result);
 
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe("Code Quality");

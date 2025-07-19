@@ -84,6 +84,7 @@ Respond with a JSON array containing one object for each criterion in the exact 
 `;
 
     const response = await generate(llmClient.ai, prompt);
+    console.error("RESPONSE:", response);
 
     // Try to parse the JSON array response
     try {
