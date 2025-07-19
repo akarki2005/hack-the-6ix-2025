@@ -100,7 +100,7 @@ export const TestResultSchema = z.object({
 export const GradeReportSchema = z.object({
   byUserCriteria: z.array(CriterionScoreSchema).optional(),
   bySeniorCriteria: z.array(CriterionScoreSchema).optional(),
-  tests: TestResultSchema.optional(),
+  byTests: TestResultSchema.optional(),
   overall: z
     .object({
       weightedScore: z.number().optional(),
