@@ -5,9 +5,9 @@ const cors = require("cors");
 
 // list every front-end origin that should be able to talk to the API
 const allowedOrigins = [
-  "http://localhost:3000",           // normal local dev
-  process.env.FRONTEND_URL           // e.g. https://42a3-abcd.ngrok-free.app
-].filter(Boolean);                   // drop undefined values
+  "http://localhost:3000", // normal local dev
+  process.env.FRONTEND_URL, // e.g. https://42a3-abcd.ngrok-free.app
+].filter(Boolean); // drop undefined values
 
 app.use(
   cors({

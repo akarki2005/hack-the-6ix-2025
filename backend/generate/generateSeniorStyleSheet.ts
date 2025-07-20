@@ -16,36 +16,6 @@ export interface GenerateSeniorStyleSheetInput {
   maxFunctionLocThreshold?: number;
 }
 
-export interface SeniorStyleSheet {
-  layering: string;
-  validation: string;
-  errorHandling: string;
-  naming: string;
-  modularity: {
-    maxFunctionLoc: number;
-    duplicationRule: string;
-  };
-  testing: string;
-  logging: string;
-  security: string;
-  apiContract: string;
-  exemplars: {
-    route: RepoFile;
-    service: RepoFile;
-    test: RepoFile;
-    validation: RepoFile;
-    [k: string]: RepoFile | undefined;
-  };
-  quantitative: {
-    avgFunctionLoc?: number;
-    testsAdded?: number;
-    errorHelperUsage?: number;
-    validationCoveragePct?: number;
-  };
-  namingExamples?: string[];
-  rawSourceMeta?: { prNumber?: number; baseRef?: string; headRef?: string };
-}
-
 export async function GenerateSeniorStyleSheet(
   props: GenerateSeniorStyleSheetInput
 ): Promise<SeniorStyleSheet> {
@@ -203,19 +173,6 @@ export async function GenerateSeniorStyleSheet(
   };
 
   // Write the generated style sheet to criteria/stylesheet.json at the project root
-  try {
-    const criteriaDir = path.resolve(process.cwd(), "criteria");
-    await fs.mkdir(criteriaDir, { recursive: true });
-    await fs.writeFile(
-      path.join(criteriaDir, "stylesheet.json"),
-      JSON.stringify(seniorStyleSheet, null, 2),
-      "utf-8"
-    );
-  } catch (error) {
-    console.error("Failed to write Senior Style Sheet:", error);
-  }
-
-  return seniorStyleSheet;
   const outDir = path.resolve(process.cwd(), "criteria");
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(
@@ -223,5 +180,6 @@ export async function GenerateSeniorStyleSheet(
     JSON.stringify(sheet, null, 2),
     "utf8"
   );
+
   return sheet;
 }

@@ -13,7 +13,6 @@ import * as fs from "fs";
 import generateContext from "./generateContext";
 import { walkFiles } from "./utils";
 import { queryData } from "../schemas/query";
-import { LLM } from "../schemas/LLM";
 import { createLLMFromEnv, LLM } from "../schemas/LLM";
 import acquireRepo from "../parse/acquireRepo";
 import validatePrLink from "../parse/validatePr";
