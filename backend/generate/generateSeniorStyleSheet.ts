@@ -1,8 +1,8 @@
 import { RepoFile, SeniorContext, SeniorStyleSheet } from "../schemas/analysis";
 import { LLM } from "../schemas/LLM";
 import { generate as generateAI } from "./utils";
-import path from "path";
-import { promises as fs } from "fs";
+import * as fs from "fs";
+import * as path from "path";
 
 export interface GenerateSeniorStyleSheetInput {
   seniorContext: SeniorContext;
@@ -178,7 +178,7 @@ export async function GenerateSeniorStyleSheet(
     }
   }
 
-  const seniorStyleSheet: SeniorStyleSheet = {
+  const sheet: SeniorStyleSheet = {
     layering: await summarize("layering"),
     validation: await summarize("validation"),
     errorHandling: await summarize("errorHandling"),
@@ -216,4 +216,12 @@ export async function GenerateSeniorStyleSheet(
   }
 
   return seniorStyleSheet;
+  const outDir = path.resolve(process.cwd(), "criteria");
+  fs.mkdirSync(outDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(outDir, "stylesheet.json"),
+    JSON.stringify(sheet, null, 2),
+    "utf8"
+  );
+  return sheet;
 }

@@ -3,7 +3,24 @@ import express from "express";
 const app = require("./app").default;
 const cors = require("cors");
 
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+// list every front-end origin that should be able to talk to the API
+const allowedOrigins = [
+  "http://localhost:3000",           // normal local dev
+  process.env.FRONTEND_URL           // e.g. https://42a3-abcd.ngrok-free.app
+].filter(Boolean);                   // drop undefined values
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow requests with no Origin header (e.g. curl / server-to-server)
+      if (!origin) return cb(null, true);
+      return allowedOrigins.includes(origin)
+        ? cb(null, true)
+        : cb(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+    credentials: true,
+  })
+);
 const http = require("http");
 const mongoose = require("mongoose");
 require("dotenv").config();

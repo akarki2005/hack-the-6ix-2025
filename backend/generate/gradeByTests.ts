@@ -1,17 +1,24 @@
 import { RepoFile, SeniorContext, TestResults } from "../schemas/analysis";
 import validateTests from "./validateTests";
+import * as path from "path";
 
 interface GradeByTestsInput {
   context: SeniorContext;
   tests: RepoFile[];
-  repoRoot: string;
-  testDir?: string;
+  repoRoot: string; // Student repository root (destination)
 }
 
-export async function gradeByTests(
-  { context, tests, repoRoot, testDir = "./repo/tests" }: GradeByTestsInput
-): Promise<TestResults> {
-  if (!tests?.length) return { total: 0, passed: 0, failed: 0 };
+export async function gradeByTests({
+  tests,
+  repoRoot,
+}: GradeByTestsInput): Promise<TestResults> {
+  // If no tests were provided, short-circuit with zeros
+  if (!tests?.length) {
+    return { total: 0, passed: 0, failed: 0 };
+  }
+
+  // —— Run Jest on those tests ——
+  const testDir = path.join(repoRoot, "tests");
 
   const { result } = await validateTests({
     testFiles: tests,
@@ -19,6 +26,5 @@ export async function gradeByTests(
     repoRoot,
   });
 
-  // Map/return only the required fields for TestResult
   return result;
 }

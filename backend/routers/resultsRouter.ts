@@ -6,8 +6,7 @@ import {
   requestResultsResponseData,
 } from "../schemas/results";
 import { connectDB } from "../db/mongoose";
-import Assessment from "../db/models/assessment";           // <-- model holding results
-
+import Assessment from "../db/models/assessment"; // <-- model holding results
 
 const resultRouter = express.Router();
 resultRouter.get("/:id", async (req, res) => {
@@ -16,7 +15,9 @@ resultRouter.get("/:id", async (req, res) => {
     await connectDB();
 
     const { id } = req.params;
-    const data: requestResultsRequestData = requestResultsRequestSchema.parse({ id });
+    const data: requestResultsRequestData = requestResultsRequestSchema.parse({
+      id,
+    });
 
     // query for the assessment / result by _id
     const doc = await Assessment.findById(data.id)
