@@ -25,42 +25,11 @@ gradeRouter.post("/", async (req, res) => {
     // 1) Validate request body
     const data: gradeRequestData = gradeRequestSchema.parse(req.body);
 
-    // 2) Validate PR URL & extract parts
-    const validated = validatePrLink({ url: data.github_link });
-    if (!validated.ok || !validated.cloneUrl) {
-      return res
-        .status(400)
-        .json({ error: "Invalid input", issues: "wrong github link format" });
-    }
-
-    // 3) Fresh-clone the repo into ./repo
-    const repoPath = path.resolve("./repo");
-    if (fs.existsSync(repoPath)) {
-      fs.rmSync(repoPath, { recursive: true, force: true });
-      console.log("[grade] Cleared existing ./repo folder");
-    }
-    const repoData = acquireRepo({ cloneUrl: validated.cloneUrl });
-    if (repoData.error) {
-      return res
-        .status(400)
-        .json({ error: "Invalid input", issues: repoData.error });
-    }
-
-    // 4) Fetch PR file-diffs from GitHub
-    const diffRes = await fetchDiffFiles({
-      owner: validated.owner!,
-      repo: validated.repo!,
-      prNumber: validated.prNumber!,
-      githubToken: process.env.GITHUB_TOKEN!,
-    });
-    if (diffRes.error) {
-      return res.status(400).json({ error: diffRes.error });
-    }
-    const diffFiles = diffRes.diffFiles;
-
     // 5) Pull assessment to build queries
     await connectDB();
-    const assessmentDoc: any = await Assessment.findOne({ repoName: data.repo }).lean();
+    const assessmentDoc: any = await Assessment.findOne({
+      repoName: data.repo,
+    }).lean();
     if (!assessmentDoc) {
       return res.status(404).json({ error: "Assessment not found" });
     }
@@ -71,13 +40,18 @@ gradeRouter.post("/", async (req, res) => {
       importance: c.weight ?? 1,
     }));
 
+    interface GradeByAllInput {
+      student_github_link: string;
+      github_token?: string; // optional override; else read from env
+      repoDestination?: string; // optional path to clone repo (default ./repo)
+    }
+
     // 6) Run the all-in-one grader
-    const llm = createLLMFromEnv();
     const { gradeReport } = await gradeByAll({
-      diffFiles,
-      newRepoRoot: repoData.repoRoot,
-      llmClient: llm,
-      queries,
+      repoDestination: data.repo,
+      github_token: process.env.GITHUB_TOKEN,
+      queries: queries,
+      student_github_link: data.github_link,
     });
 
     // 7) Persist results back to MongoDB
@@ -92,7 +66,11 @@ gradeRouter.post("/", async (req, res) => {
       },
     };
     const options = { new: true };
-    const updated = await Assessment.findOneAndUpdate(filter, update, options).exec();
+    const updated = await Assessment.findOneAndUpdate(
+      filter,
+      update,
+      options
+    ).exec();
     if (!updated) {
       return res
         .status(404)
