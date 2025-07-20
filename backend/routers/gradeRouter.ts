@@ -1,6 +1,4 @@
 import express from "express";
-import * as fs from "fs";
-import * as path from "path";
 import * as dotenv from "dotenv";
 import { ZodError } from "zod";
 import {
@@ -8,11 +6,7 @@ import {
   gradeRequestSchema,
   gradeResponseData,
 } from "../schemas/grade";
-import validatePrLink from "../parse/validatePr";
-import acquireRepo from "../parse/acquireRepo";
-import { createLLMFromEnv } from "../schemas/LLM";
 import { gradeByAll } from "../generate/gradeByAll";
-import { fetchDiffFiles } from "../parse/fetchDiffFiles";
 import Assessment from "../db/models/assessment";
 import { connectDB } from "../db/mongoose";
 
@@ -39,12 +33,6 @@ gradeRouter.post("/", async (req, res) => {
       definition: c.description,
       importance: c.weight ?? 1,
     }));
-
-    interface GradeByAllInput {
-      student_github_link: string;
-      github_token?: string; // optional override; else read from env
-      repoDestination?: string; // optional path to clone repo (default ./repo)
-    }
 
     // 6) Run the all-in-one grader
     const { gradeReport } = await gradeByAll({
