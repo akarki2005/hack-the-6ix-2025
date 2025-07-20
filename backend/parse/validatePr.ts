@@ -1,14 +1,14 @@
-// 1. Validate & parse a PR URL
 interface ValidatePrLinkInput {
   url: string;
 }
+
 interface ValidatePrLinkOutput {
   ok: boolean;
-  // when ok=true, these are filled:
-  owner?: string; // e.g. "octocat"
-  repo?: string; // e.g. "hello-world"
-  prNumber?: number; // e.g. 42
-  error?: string; // on ok=false
+  owner?: string;
+  repo?: string;
+  prNumber?: number;
+  cloneUrl?: string;
+  error?: string;
 }
 
 export default function validatePrLink(
@@ -20,10 +20,14 @@ export default function validatePrLink(
   if (!match) {
     return { ok: false, error: "Invalid GitHub PR URL" };
   }
+
   const [, owner, repo, prNumberStr] = match;
   const prNumber = Number(prNumberStr);
+
   if (!isNaN(prNumber)) {
-    return { ok: true, owner, repo, prNumber };
+    const cloneUrl = `https://github.com/${owner}/${repo}.git`;
+    return { ok: true, owner, repo, prNumber, cloneUrl };
   }
+
   return { ok: false, error: "Invalid PR number in URL" };
 }

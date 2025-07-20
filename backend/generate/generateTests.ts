@@ -1,6 +1,8 @@
-import { RepoFile, SeniorContext, TestResult } from "../schemas/analysis";
+import { RepoFile, SeniorContext } from "../schemas/analysis";
 import { LLM } from "../schemas/LLM";
-import { generate } from "./utils";
+import { generate, guessTestExtension, stripCodeFences } from "./utils";
+import * as fs from "fs";
+import * as path from "path";
 
 interface GenerateTestsInput {
   context: SeniorContext;
@@ -18,11 +20,28 @@ interface GenerateTestsOutput {
 export async function generateTests(
   props: GenerateTestsInput
 ): Promise<GenerateTestsOutput> {
-  const { context, dryRun = true, testDir, llmClient } = props;
-  const changedFiles = context.diffFiles.map((f) => f.path);
-  const relatedFiles = context.relatedFiles.filter((f) =>
-    changedFiles.includes(f.path)
+  const {
+    context,
+    dryRun = false,
+    testDir = "./repo/tests",
+    llmClient,
+  } = props;
+  fs.mkdirSync(path.resolve(testDir), { recursive: true });
+
+  const changedPaths = context.diffFiles.map((f) => f.path);
+  const changedBases = changedPaths.map((p) =>
+    path.basename(p, path.extname(p))
   );
+
+  const relatedFiles = context.relatedFiles.filter((f) => {
+    const p = f.path;
+    const base = path.basename(p, path.extname(p));
+    return (
+      changedPaths.includes(p) || // exact path
+      changedBases.includes(base) // same base name
+    );
+  });
+
   const proposedTests: RepoFile[] = [];
   const coverageTargets: string[] = [];
   let rationale = "";
@@ -50,10 +69,12 @@ export async function generateTests(
     // Generate test content
     let testContent = "";
     if (llmClient && llmClient.ai) {
-      const prompt = `Write a Jest test file for the following code. Focus on exported functions.\n\nFile: ${
-        file.path
-      }\n${file.content.slice(0, 500)}`;
+      const prompt = `Write a Jest test file for the following code. Return only the code block—no explanations or commentary. Return only the raw code—no markdown fences or formatting..
+       Focus on exported functions. Make sure to import all necessary dependencies mentioned in the file. \n\nFile: ${
+         file.path
+       }\n${file.content.slice(0, 500)}`;
       testContent = await generate(llmClient.ai, prompt);
+      testContent = stripCodeFences(testContent);
     } else {
       testContent = `import { ${functions.join(
         ", "
@@ -61,18 +82,19 @@ export async function generateTests(
         file.path
       }', () => {\n  it('should work', () => {\n    // TODO: add assertions\n  });\n});`;
     }
+    const baseName = path.basename(file.path, path.extname(file.path));
     const testFile: RepoFile = {
-      path: file.path.replace(/\.[^.]+$/, ".test.ts"),
+      path: `${baseName}.test.${guessTestExtension(testContent, file.path)}`,
       content: testContent,
       language: "TypeScript",
     };
     proposedTests.push(testFile);
     rationale += `Proposed test for ${file.path}. `;
     // Optionally write to disk
+    console.error("test generated");
     if (!dryRun && testDir) {
-      const fs = require("fs");
-      const path = require("path");
       const outPath = path.join(testDir, testFile.path);
+      console.error(outPath);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, testFile.content, "utf8");
     }

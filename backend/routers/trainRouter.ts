@@ -1,4 +1,6 @@
 import express from "express";
+import * as fs from "fs";
+import * as path from "path";
 import { ZodError } from "zod";
 import {
   trainRequestData,
@@ -14,33 +16,39 @@ import { GenerateSeniorStyleSheet } from "../generate/generateSeniorStyleSheet";
 import { createLLMFromEnv } from "../schemas/LLM";
 import { generateTests } from "../generate/generateTests";
 import validateTests from "../generate/validateTests";
+import removeFailingTests from "../generate/removeFailingTests";
+
 dotenv.config();
 
 const trainRouter = express.Router();
 
 trainRouter.post("/", async (req, res) => {
   try {
-    // Validate request body against schema
+    // 1) Validate request
     const data: trainRequestData = trainRequestSchema.parse(req.body);
 
-    // validate the prlink
+    // 2) Validate PR URL & clone
     const validated = validatePrLink({ url: data.github_link });
-    if (!validated.ok) {
-      res
+    if (!validated.ok || !validated.cloneUrl) {
+      return res
         .status(400)
         .json({ error: "Invalid input", issues: "wrong github link format" });
     }
 
-    // git clone the repo
-
-    const repoData = acquireRepo({ cloneUrl: data.github_link });
-
-    if (repoData.error) {
-      res.status(400).json({ error: "Invalid input", issues: repoData.error });
+    const repoPath = path.resolve("./repo");
+    if (fs.existsSync(repoPath)) {
+      fs.rmSync(repoPath, { recursive: true, force: true });
+      console.log("[train] Cleared existing ./repo folder");
     }
 
-    // fetch diff files
+    const repoData = acquireRepo({ cloneUrl: validated.cloneUrl });
+    if (repoData.error) {
+      return res
+        .status(400)
+        .json({ error: "Invalid input", issues: repoData.error });
+    }
 
+    // 3) Fetch diff
     const diffFiles = await fetchDiffFiles({
       owner: validated.owner!,
       githubToken: process.env.GITHUB_TOKEN!,
@@ -48,55 +56,56 @@ trainRouter.post("/", async (req, res) => {
       prNumber: validated.prNumber!,
     });
 
-    // generate the context
-
+    // 4) Build context
     const context = generateContext({
       diffFiles: diffFiles.diffFiles,
       repoRoot: repoData.repoRoot,
     });
 
+    // 5) Generate senior style sheet (optional side‑effect)
     const llm = createLLMFromEnv();
-
-    // generate the style sheet
-
-    const stylesheet = GenerateSeniorStyleSheet({
+    await GenerateSeniorStyleSheet({
       seniorContext: context,
       llmClient: llm,
     });
 
-    // generate the tests
-
-    // need to set the testDir variable to directly inside the student repo in order for the tests to work
-
-    const tests = await generateTests({ context: context, llmClient: llm });
-
-    const test_validation = await validateTests({
-      testFiles: tests.proposedTests,
+    // 6) Generate tests into ./repo/tests
+    const testDir = path.join(repoPath, "tests");
+    const tests = await generateTests({
+      context,
+      llmClient: llm,
+      dryRun: false,
+      testDir,
     });
 
-    console.log(test_validation);
+    // 7) Validate generated tests
+    const validation = await validateTests({
+      testFiles: tests.proposedTests,
+      testDir,
+      repoRoot: repoData.repoRoot,
+    });
 
-    if (test_validation.result.failedTests) {
-      console.error("ai generated tests do not work");
-    }
+    // 8) If some tests failed, strip them and re‑validate (optional)
+    removeFailingTests({
+      tests: tests.proposedTests,
+      testResults: validation.result,
+      testDir,
+    });
 
-    // somehow train the LLM on the repo.
-
-    // return answer
-    const result: trainResponseData = { ok: true };
-
-    res.status(200).json(result);
+    // 9) Respond with summary
+    const response: trainResponseData = {
+      ok: true,
+    };
+    return res.status(200).json(response);
   } catch (error) {
     if (error instanceof ZodError) {
-      // Handle validation errors
-      res.status(400).json({ error: "Invalid input", issues: error.message });
+      return res
+        .status(400)
+        .json({ error: "Invalid input", issues: error.message });
     } else if (error instanceof Error) {
-      // Handle known errors
-      res.status(500).json({ error: error.message });
-    } else {
-      // Handle unknown errors
-      res.status(500).json({ error: "Unknown server error" });
+      return res.status(500).json({ error: error.message });
     }
+    return res.status(500).json({ error: "Unknown server error" });
   }
 });
 

@@ -51,3 +51,69 @@ export async function generate(
     }
   }
 }
+
+export function stripCodeFences(output) {
+  // Remove opening fence e.g. ``` or ```javascript
+  const withoutOpening = output.replace(/^```(?:\w*)\s*\n/, "");
+  // Remove closing fence ```
+  return withoutOpening.replace(/```$/, "");
+}
+
+export function guessTestExtension(testCode: string, sourceFilePath?: string): string {
+  let hasTypeScript = false;
+  let hasJSX = false;
+  let hasReact = false;
+
+  // Check source file extension first if available
+  if (sourceFilePath) {
+    const sourceExt = path.extname(sourceFilePath);
+    if (sourceExt === '.ts') hasTypeScript = true;
+    if (sourceExt === '.tsx') {
+      hasTypeScript = true;
+      hasJSX = true;
+      hasReact = true;
+    }
+    if (sourceExt === '.jsx') {
+      hasJSX = true;
+      hasReact = true;
+    }
+  }
+
+  // Analyze test code content
+  // TypeScript indicators
+  if (
+    /: *[A-Za-z0-9_<>|\[\]]+\b/.test(testCode) || // type annotations
+    /import type/.test(testCode) || // type imports
+    /interface\s+\w+/.test(testCode) || // interfaces
+    /type\s+\w+\s*=/.test(testCode) || // type aliases
+    /<[A-Z]\w*>/.test(testCode) || // generic types
+    /as\s+[A-Z]\w*/.test(testCode) // type assertions
+  ) {
+    hasTypeScript = true;
+  }
+
+  // JSX/React indicators
+  if (
+    /import.*React/.test(testCode) || // React imports
+    /from\s+['"]react['"]/.test(testCode) || // React imports
+    /<[A-Z]\w*[\s/>]/.test(testCode) || // JSX components
+    /jsx\s*\(/i.test(testCode) || // jsx function calls
+    /render\s*\(/.test(testCode) || // React testing
+    /screen\./.test(testCode) || // React testing library
+    /fireEvent\./.test(testCode) // React testing library
+  ) {
+    hasJSX = true;
+    hasReact = true;
+  }
+
+  // Determine extension based on analysis
+  if (hasTypeScript && hasJSX) {
+    return "tsx";
+  } else if (hasTypeScript) {
+    return "ts";
+  } else if (hasJSX) {
+    return "jsx";
+  } else {
+    return "js";
+  }
+}

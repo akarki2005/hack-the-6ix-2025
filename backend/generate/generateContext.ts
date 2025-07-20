@@ -32,7 +32,19 @@ export default function generateContext(
   const edited = new Set<string>();
   diffFiles.forEach((f) => {
     if (f.status !== "removed") {
-      edited.add(path.resolve(repoRoot, f.path));
+      const abs = path.resolve(repoRoot, f.path);
+      if (fs.existsSync(abs)) {
+        edited.add(abs);
+      } else {
+        // Try to find the same file with a different JS/TS/JSX/TSX extension
+        const { dir, name } = path.parse(abs);
+        const candidate = [".js", ".jsx", ".ts", ".tsx"].map((ext) =>
+          path.join(dir, name + ext)
+        ).find((p) => fs.existsSync(p));
+        if (candidate) {
+          edited.add(candidate);
+        }
+      }
     }
   });
 
@@ -120,10 +132,25 @@ export default function generateContext(
   });
 
   // 5. Build relatedFiles as RepoFile[]
-  const relatedFiles: RepoFile[] = relatedFilesAbs.map((filePath) => ({
-    path: path.relative(repoRoot, filePath),
-    content: fs.readFileSync(filePath, "utf8"),
-  }));
+  const relatedFiles: RepoFile[] = relatedFilesAbs.map((filePath) => {
+    // Ensure path exists; try alternate extensions first
+    let actualPath = filePath;
+    if (!fs.existsSync(actualPath)) {
+      const { dir, name } = path.parse(actualPath);
+      const alt = [".js", ".jsx", ".ts", ".tsx"].map((ext) =>
+        path.join(dir, name + ext)
+      ).find((p) => fs.existsSync(p));
+      if (alt) actualPath = alt;
+    }
+
+    const raw = path.relative(repoRoot, actualPath);
+    const normalized = raw.split(path.sep).join("/");
+
+    return {
+      path: normalized,
+      content: fs.readFileSync(actualPath, "utf8"),
+    };
+  });
 
   // 6. Infer tech stack from package.json
   const pkg = readJSON(path.join(repoRoot, "package.json")) || {};

@@ -1,12 +1,12 @@
 import express from "express";
 
 const app = require("./app").default;
-const cors = require('cors');
+const cors = require("cors");
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 const http = require("http");
-const mongoose = require('mongoose');
-require('dotenv').config();
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
@@ -17,7 +17,6 @@ export const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   await mongoose.connect(MONGODB_URI);
 };
-// for ws
 const server = http.createServer(app);
 
 const PORT = process.env.API_PORT ? Number(process.env.API_PORT) : 5000;

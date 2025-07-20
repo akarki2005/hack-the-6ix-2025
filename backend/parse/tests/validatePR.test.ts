@@ -8,6 +8,7 @@ describe("validatePrLink", () => {
     expect(result.owner).toBe("octocat");
     expect(result.repo).toBe("hello-world");
     expect(result.prNumber).toBe(42);
+    expect(result.cloneUrl).toBe("https://github.com/octocat/hello-world.git");
     expect(result.error).toBeUndefined();
   });
 
@@ -20,6 +21,7 @@ describe("validatePrLink", () => {
     expect(result.owner).toBe("octocat");
     expect(result.repo).toBe("hello-world");
     expect(result.prNumber).toBe(123);
+    expect(result.cloneUrl).toBe("https://github.com/octocat/hello-world.git");
     expect(result.error).toBeUndefined();
   });
 
@@ -27,6 +29,7 @@ describe("validatePrLink", () => {
     const input = { url: "https://github.com/octocat/hello-world/issues/42" };
     const result = validatePrLink(input);
     expect(result.ok).toBe(false);
+    expect(result.cloneUrl).toBeUndefined();
     expect(result.error).toBe("Invalid GitHub PR URL");
   });
 
@@ -34,6 +37,7 @@ describe("validatePrLink", () => {
     const input = { url: "not a url" };
     const result = validatePrLink(input);
     expect(result.ok).toBe(false);
+    expect(result.cloneUrl).toBeUndefined();
     expect(result.error).toBe("Invalid GitHub PR URL");
   });
 
@@ -41,6 +45,7 @@ describe("validatePrLink", () => {
     const input = { url: "https://github.com/octocat/hello-world/pull/abc" };
     const result = validatePrLink(input);
     expect(result.ok).toBe(false);
+    expect(result.cloneUrl).toBeUndefined();
     expect(result.error).toBe("Invalid GitHub PR URL");
   });
 
@@ -48,6 +53,7 @@ describe("validatePrLink", () => {
     const input = { url: "https://github.com/octocat/hello-world/pull/" };
     const result = validatePrLink(input);
     expect(result.ok).toBe(false);
+    expect(result.cloneUrl).toBeUndefined();
     expect(result.error).toBe("Invalid GitHub PR URL");
   });
 });

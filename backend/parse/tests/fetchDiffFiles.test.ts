@@ -1,6 +1,6 @@
 import { fetchDiffFiles } from "../fetchDiffFiles";
 import { DiffFileSchema } from "../../schemas/analysis";
-import nock from "nock";
+import * as nock from "nock";
 
 describe("fetchDiffFiles", () => {
   const owner = "test-owner";
