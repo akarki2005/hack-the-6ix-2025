@@ -17,7 +17,10 @@
     "http": "^0.0.1-security",
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.4",
+<<<<<<< HEAD
     "ngrok": "^5.0.0-beta.2",
+=======
+>>>>>>> ui-ux
     "zod": "^4.0.5"
   },
   "devDependencies": {
