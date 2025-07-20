@@ -10,6 +10,7 @@ import { createLLMFromEnv } from "../../schemas/LLM";
 import { generateTests } from "../generateTests";
 import validateTests from "../validateTests";
 import removeFailingTests from "../removeFailingTests";
+import { GenerateSeniorStyleSheet } from "../generateSeniorStyleSheet";
 
 (async function main() {
   const validated = validatePrLink({

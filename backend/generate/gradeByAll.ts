@@ -40,7 +40,7 @@ export async function gradeByAll(
   const {
     student_github_link,
     queries,
-    github_token = process.env.GITHUB_TOKEN,
+  github_token = process.env.GITHUB_TOKEN,
     repoDestination = "./repo",
   } = request;
   // ————————————————————————————————————————————
@@ -68,10 +68,16 @@ export async function gradeByAll(
   }
 
   // Clone / pull the student's repository
-  const { repoRoot } = acquireRepo({
+  const { repoRoot, error: repoError } = acquireRepo({
     cloneUrl: validate.cloneUrl,
     destination: repoDestination,
   });
+
+  if (!repoRoot || repoError) {
+    throw new Error(
+      `[gradeByAll] Failed to acquire student repository: ${repoError || "unknown error"}`
+    );
+  }
 
   // Fetch diff files for the PR via GitHub API
   let diffFiles = [] as import("../schemas/analysis").DiffFile[];
@@ -114,8 +120,7 @@ export async function gradeByAll(
   // 2. Collect test files from the cloned repo's tests folder
   //    These will be copied into the fresh student repo by gradeByTests
   // ————————————————————————————————————————————
-  const sourceRepoRoot = repoRoot;
-  const testsDir = path.join(sourceRepoRoot, "tests");
+  const testsDir = path.join(repoRoot, "tests");
 
   let testsRepoFiles: RepoFile[] = [];
   if (fs.existsSync(testsDir)) {
@@ -161,7 +166,6 @@ export async function gradeByAll(
     context: seniorContext,
     tests: testsRepoFiles,
     repoRoot,
-    sourceRepoRoot,
   });
 
   // 5. Combine results
