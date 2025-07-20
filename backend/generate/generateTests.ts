@@ -28,10 +28,20 @@ export async function generateTests(
   } = props;
   fs.mkdirSync(path.resolve(testDir), { recursive: true });
 
-  const changedFiles = context.diffFiles.map((f) => f.path);
-  const relatedFiles = context.relatedFiles.filter((f) =>
-    changedFiles.includes(f.path)
+  const changedPaths = context.diffFiles.map((f) => f.path);
+  const changedBases = changedPaths.map((p) =>
+    path.basename(p, path.extname(p))
   );
+
+  const relatedFiles = context.relatedFiles.filter((f) => {
+    const p = f.path;
+    const base = path.basename(p, path.extname(p));
+    return (
+      changedPaths.includes(p) || // exact path
+      changedBases.includes(base) // same base name
+    );
+  });
+
   const proposedTests: RepoFile[] = [];
   const coverageTargets: string[] = [];
   let rationale = "";

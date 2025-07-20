@@ -10,6 +10,7 @@ import { createLLMFromEnv } from "../../schemas/LLM";
 import { GenerateSeniorStyleSheet } from "../generateSeniorStyleSheet";
 import { generateTests } from "../generateTests";
 import validateTests from "../validateTests";
+import { generate } from "../utils";
 
 (async function main() {
   const validated = validatePrLink({
@@ -37,11 +38,13 @@ import validateTests from "../validateTests";
     diffFiles: diffFiles.diffFiles,
     repoRoot: repoData.repoRoot,
   });
+
   const llm = createLLMFromEnv();
   const stylesheet = await GenerateSeniorStyleSheet({
     seniorContext: context,
     llmClient: llm,
   });
+
   const tests = await generateTests({
     context: context,
     llmClient: llm,
