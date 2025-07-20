@@ -11,6 +11,7 @@ import { GenerateSeniorStyleSheet } from "../generateSeniorStyleSheet";
 import { generateTests } from "../generateTests";
 import validateTests from "../validateTests";
 import { generate } from "../utils";
+import removeFailingTests from "../removeFailingTests";
 
 (async function main() {
   const validated = validatePrLink({
@@ -62,4 +63,11 @@ import { generate } from "../utils";
 
   console.log(test_validation.result.failedTests);
   console.log(test_validation.result.passed, test_validation.result.total);
+
+  removeFailingTests({
+    tests: tests.proposedTests,
+    testResults: test_validation.result,
+    testDir: "./repo/tests",
+  });
 })();
+``;

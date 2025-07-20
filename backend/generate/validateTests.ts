@@ -290,7 +290,7 @@ async function runJestAndParse(testDir: string): Promise<SchemaTestResult> {
       .flatMap((suite: TestResult) => suite.testResults as AssertionResult[])
       .filter((assertion) => assertion.status === "failed")
       .map((assertion) => ({
-        name: assertion.fullName,
+        name: assertion.title,
         message: assertion.failureMessages.join("\n"),
       }));
 
