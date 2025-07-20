@@ -7,10 +7,8 @@ import acquireRepo from "../../parse/acquireRepo";
 import { fetchDiffFiles } from "../../parse/fetchDiffFiles";
 import generateContext from "../generateContext";
 import { createLLMFromEnv } from "../../schemas/LLM";
-import { GenerateSeniorStyleSheet } from "../generateSeniorStyleSheet";
 import { generateTests } from "../generateTests";
 import validateTests from "../validateTests";
-import { generate } from "../utils";
 import removeFailingTests from "../removeFailingTests";
 
 (async function main() {
