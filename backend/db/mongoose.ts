@@ -1,6 +1,8 @@
 // db.ts
 // @ts-ignore
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const { MONGODB_URI, MONGODB_DB } = process.env;
 

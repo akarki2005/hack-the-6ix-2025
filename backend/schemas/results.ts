@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const requestResultsRequestSchema = z.object({
-  id: z.number(),
+  id: z.string(),
 });
 
 export type requestResultsRequestData = z.infer<
