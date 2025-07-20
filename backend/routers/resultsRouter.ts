@@ -5,19 +5,34 @@ import {
   requestResultsRequestSchema,
   requestResultsResponseData,
 } from "../schemas/results";
+import { connectDB } from "../db/mongoose";
+import Assessment from "../db/models/assessment";           // <-- model holding results
+
 
 const resultRouter = express.Router();
 resultRouter.get("/:id", async (req, res) => {
   try {
+    // connect to Mongo once per process
+    await connectDB();
+
     const { id } = req.params;
+    const data: requestResultsRequestData = requestResultsRequestSchema.parse({ id });
 
-    const data: requestResultsRequestData = requestResultsRequestSchema.parse({
-      id: id,
-    });
+    // query for the assessment / result by _id
+    const doc = await Assessment.findById(data.id)
+      .select("comments grade")
+      .lean()
+      .exec();
 
-    // fetch the results data for the id user
+    if (!doc) {
+      return res.status(404).json({ error: "Result not found" });
+    }
 
-    const result: requestResultsResponseData = { comments: "todo", grade: 100 };
+    const result: requestResultsResponseData = {
+      comments: doc.comments as string,
+      grade: doc.grade as number,
+    };
+
     res.json(result);
   } catch (error) {
     if (error instanceof ZodError) {

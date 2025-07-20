@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useUser } from '@auth0/nextjs-auth0/client';
 import { addSubmission } from '../../src/utils/submissions';
 import Head from 'next/head';
 
 export default function SubmitPage() {
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     repoOwner: '',
     repoName: '',
@@ -145,6 +147,33 @@ export default function SubmitPage() {
     if (response.ok) {
       const result = await response.json();
       console.log('Repos created:', result.links);
+
+      // Add assessment to backend
+      try {
+        if (!user || !user.sub) {
+          console.error('User not authenticated');
+          return;
+        }
+
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/assessments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            auth0Id: user.sub,
+            repo: {
+              owner: formData.repoOwner,
+              name: formData.repoName
+            },
+            candidates: formData.candidates,
+            criteria: formData.criteria
+          })
+        });
+        // Trigger dashboard update event
+        window.dispatchEvent(new Event('submissionsUpdated'));
+      } catch (err) {
+        console.error('Error posting assessment:', err);
+      }
+
       setSubmitStatus('success');
       window.dispatchEvent(new Event('submissionsUpdated'));
       setTimeout(() => router.push('/'), 500);
@@ -189,7 +218,7 @@ export default function SubmitPage() {
         <meta name="description" content="Create a new assessment by specifying repository, candidates and criteria" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      
+
       <div className="min-h-screen bg-[var(--bg)]">
         {/* Navbar */}
         <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -473,4 +502,4 @@ export default function SubmitPage() {
       </div>
     </>
   );
-} 
+}
