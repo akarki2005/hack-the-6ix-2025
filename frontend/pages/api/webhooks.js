@@ -37,8 +37,25 @@ export default async function handler(req, res) {
     ['opened'].includes(body.action) &&
     body.pull_request.base.ref === 'main'
   ) {
-    console.log(body);
 
+    // NEW: forward the PR link to the backend /grade route
+    const prLink = body.pull_request?.html_url;
+    const user = body.pull_request.user.login;
+    const repo = body.repository.name;
+    try {
+      const backendBase = process.env.BACKEND_BASE_URL || 'http://localhost:4000';
+      const resp = await fetch(`${backendBase}/grade`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prLink, user, repo }),
+      });
+
+      if (!resp.ok) {
+        console.error(`/grade responded with ${resp.status} ${resp.statusText}`);
+      }
+    } catch (err) {
+      console.error('Failed to call /grade:', err);
+    }
   }
 
   res.status(204).end();
