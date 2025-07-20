@@ -11,6 +11,9 @@
   "dependencies": {
     "@auth0/nextjs-auth0": "^2.3.0",
     "axios": "^1.10.0",
+    "body-parser": "^2.2.0",
+    "crypto": "^1.0.1",
+    "express": "^5.1.0",
     "mongodb": "^6.17.0",
     "next": "15.4.2",
     "react": "19.1.0",

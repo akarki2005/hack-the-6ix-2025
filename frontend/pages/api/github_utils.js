@@ -98,6 +98,9 @@ async function createReposFromTemplate(token, templateOwner, templateRepo, baseR
     const url = `https://api.github.com/repos/${templateOwner}/${templateRepo}/generate`;
     const links = [];
 
+    const webhookUrl = process.env.WEBHOOK_URL || 'https://your-domain.com/api/github-webhook';
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || 'my-secret'; // Secure this properly
+
     for (const student of studentList) {
         const repoName = createRepoName(baseRepoName);
         const payload = {
@@ -116,6 +119,7 @@ async function createReposFromTemplate(token, templateOwner, templateRepo, baseR
                 const sha = await waitForDefaultBranch(token, yourUsername, repoName);
                 if (sha) {
                     await addCollaboratorToRepo(token, yourUsername, repoName, student, sha);
+                    await addWebhookToRepo(token, yourUsername, repoName, webhookUrl, webhookSecret);
                     links.push(`https://github.com/${yourUsername}/${repoName}`);
                 }
             }
@@ -125,6 +129,37 @@ async function createReposFromTemplate(token, templateOwner, templateRepo, baseR
     }
 
     return links;
+}
+
+
+// Add webhook to the repo
+async function addWebhookToRepo(token, owner, repo, webhookUrl, secret) {
+    const headers = {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github+json'
+    };
+
+    const payload = {
+        config: {
+            url: webhookUrl,
+            content_type: 'json',
+            secret: secret
+        },
+        events: ['pull_request'],
+        active: true
+    };
+
+    console.log(`🔗 Adding webhook to ${owner}/${repo}...`);
+    try {
+        const res = await axios.post(
+            `https://api.github.com/repos/${owner}/${repo}/hooks`,
+            payload,
+            { headers }
+        );
+        console.log("✅ Webhook added");
+    } catch (err) {
+        console.error("❌ Failed to add webhook:", err.response?.data || err.message);
+    }
 }
 
 module.exports = {
