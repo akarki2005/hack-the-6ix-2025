@@ -70,10 +70,9 @@ export async function generateTests(
     let testContent = "";
     if (llmClient && llmClient.ai) {
       const prompt = `Write a Jest test file for the following code. Return only the code block—no explanations or commentary. Return only the raw code—no markdown fences or formatting..
-       Focus on exported functions.\n\nFile: ${file.path}\n${file.content.slice(
-        0,
-        500
-      )}`;
+       Focus on exported functions. Make sure to import all necessary dependencies mentioned in the file. \n\nFile: ${
+         file.path
+       }\n${file.content.slice(0, 500)}`;
       testContent = await generate(llmClient.ai, prompt);
       testContent = stripCodeFences(testContent);
     } else {

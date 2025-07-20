@@ -60,5 +60,6 @@ import { generate } from "../utils";
 
   console.error("tests validated");
 
-  console.log(test_validation);
+  console.log(test_validation.result.failedTests);
+  console.log(test_validation.result.passed, test_validation.result.total);
 })();

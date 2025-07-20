@@ -275,7 +275,7 @@ async function runJestAndParse(testDir: string): Promise<SchemaTestResult> {
         json: true,
         noStackTrace: true,
         silent: true,
-        testMatch: ["**/*.test.[jt]s?(x)", "**/*.spec.[jt]s?(x)"],
+        testMatch: ["**/*.test.[jt]s?(x)"],
       },
       [testDir]
     )) as { results: AggregatedResult };
@@ -376,6 +376,7 @@ export default async function validateTests(
   }
 
   // Run Jest
+
   const result = await runJestAndParse(props.testDir!);
   return { result };
 }
