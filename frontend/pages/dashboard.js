@@ -6,22 +6,23 @@ import { useUser } from '@auth0/nextjs-auth0/client';
 
 export default function Dashboard() {
   const { user, isLoading } = useUser();
-  const [submissions, setSubmissions] = useState([]);
-  const [expandedSubmissions, setExpandedSubmissions] = useState(new Set());
+
+  const [assessments, setAssessments] = useState([]);
+  const [expandedAssessments, setExpandedAssessments] = useState(new Set());
 
   useEffect(() => {
-    const loadSubmissions = () => {
-      const storedSubmissions = getSubmissions();
-      setSubmissions(storedSubmissions);
-    };
-    loadSubmissions();
-    const handleSubmissionsUpdate = () => loadSubmissions();
-    window.addEventListener('submissionsUpdated', handleSubmissionsUpdate);
-    return () => window.removeEventListener('submissionsUpdated', handleSubmissionsUpdate);
-  }, []);
+    async function fetchAssessments(auth0Id) {
+      const res = await fetch(`http://localhost:5000/api/user/assessments?auth0Id=${encodeURIComponent(auth0Id)}`);
+      const data = await res.json();
+      setAssessments(data.assessments || []);
+    }
+    if (user && user.sub) {
+      fetchAssessments(user.sub);
+    }
+  }, [user]);
 
   const toggleExpanded = (id) => {
-    setExpandedSubmissions((prev) => {
+    setExpandedAssessments((prev) => {
       const set = new Set(prev);
       set.has(id) ? set.delete(id) : set.add(id);
       return set;
@@ -105,7 +106,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {submissions.length === 0 ? (
+            {assessments.length === 0 ? (
               <div className="text-center py-12">
                 <h3 className="text-lg font-medium text-black mb-2">No assessments</h3>
                 <p className="text-gray-500 mb-6">Get started by creating a new assessment.</p>
@@ -116,49 +117,24 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {submissions.map((s) => {
-                  const expanded = expandedSubmissions.has(s.id);
-                  // Support both old and new formats for compatibility
-                  const repoDisplay = s.repoOwner && s.repoName ? `${s.repoOwner}/${s.repoName}` : (s.repoUrl ? s.repoUrl.split('/').slice(-2).join('/') : '');
-                  // Build candidate list and statuses
-                  let candidateList = [];
-                  let statuses = [];
-                  if (s.candidates && s.candidates.length > 0) {
-                    candidateList = s.candidates;
-                    // Try to match status by githubUsername
-                    if (s.emailStatuses && Array.isArray(s.emailStatuses)) {
-                      statuses = candidateList.map(cand => {
-                        const statusObj = s.emailStatuses.find(es => es.email === (cand.githubUsername || cand.email));
-                        return statusObj ? statusObj.submitted : false;
-                      });
-                    } else {
-                      statuses = candidateList.map(() => false);
-                    }
-                  } else if (s.githubUsernames && Array.isArray(s.githubUsernames)) {
-                    candidateList = s.githubUsernames.map(username => ({ name: username }));
-                    statuses = s.emailStatuses && Array.isArray(s.emailStatuses)
-                      ? s.emailStatuses.map(es => es.submitted)
-                      : candidateList.map(() => false);
-                  } else {
-                    candidateList = [];
-                    statuses = [];
-                  }
+                {assessments.map((a, idx) => {
+                  const expanded = expandedAssessments.has(a._id || idx);
                   return (
-                    <div key={s.id} className="hover:bg-gray-50 transition-colors duration-200">
+                    <div key={a._id || idx} className="hover:bg-gray-50 transition-colors duration-200">
                       <div className="px-6 py-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <div className="ml-4">
                               <div className="flex items-center">
-                                <p className="text-sm font-medium text-black truncate">{repoDisplay}</p>
-                                <span className={`ml-2 ${getStatusColor(s.status)}`}>{s.status}</span>
+                                <p className="text-sm font-medium text-black truncate">Assessment ID: {a._id || idx}</p>
+                                {/* Add more assessment details here if needed */}
                               </div>
                               <div className="mt-1 text-sm text-gray-500">
-                                {candidateList.length} candidates • {formatDate(s.createdAt)}
+                                {a.createdAt ? formatDate(a.createdAt) : ''}
                               </div>
                             </div>
                           </div>
-                          <button onClick={() => toggleExpanded(s.id)} className="text-gray-400 hover:text-gray-600 p-2 rounded-lg transition-colors duration-200">
+                          <button onClick={() => toggleExpanded(a._id || idx)} className="text-gray-400 hover:text-gray-600 p-2 rounded-lg transition-colors duration-200">
                             <svg className={`h-5 w-5 transform transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                           </button>
                         </div>
@@ -166,51 +142,7 @@ export default function Dashboard() {
                       {expanded && (
                         <div className="px-6 pb-4 bg-gray-50 border-t border-gray-200">
                           <div className="mt-4 space-y-4">
-                            {/* Candidates Section */}
-                            <div>
-                              <h4 className="text-sm font-medium text-black mb-3">Candidates ({candidateList.length} candidate{candidateList.length === 1 ? '' : 's'})</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                {candidateList.map((cand, index) => (
-                                  <div key={index} className={`p-3 rounded-md border ${statuses[index] ? 'bg-[var(--secondary)]/20 border-[var(--secondary)]/40' : 'bg-red-50 border-red-200'}`}>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-black truncate">{cand.name}</span>
-                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statuses[index] ? 'bg-[var(--secondary)]/30 text-[var(--primary)]' : 'bg-red-100 text-red-800'}`}>
-                                        {statuses[index] ? 'Submitted' : 'Incomplete'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Repository Details */}
-                            <div>
-                              <h4 className="text-sm font-medium text-black mb-2">Repository Details</h4>
-                              <div className="bg-white p-3 rounded-md border border-gray-200">
-                                <p className="text-sm text-black break-all">{repoDisplay}</p>
-                                <p className="text-xs text-gray-500 mt-1">Submitted on {formatDate(s.createdAt)}</p>
-                              </div>
-                            </div>
-
-                            {/* Criteria Section */}
-                            <div>
-                              <h4 className="text-sm font-medium text-black mb-3">Criteria ({s.criteria ? s.criteria.length : 0})</h4>
-                              {s.criteria && s.criteria.length > 0 ? (
-                                <ul className="space-y-2">
-                                  {s.criteria.map((crit, idx) => (
-                                    <li key={idx} className="p-3 rounded-md border bg-[var(--primary)]/10 border-[var(--primary)]/30">
-                                      <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-[var(--primary)] truncate">{crit.name}</p>
-                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[var(--primary)]/20 text-[var(--primary)]">Weight {crit.weight}</span>
-                                      </div>
-                                      <p className="text-sm text-[var(--primary)]/80 mt-1 whitespace-pre-wrap break-words">{crit.description}</p>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-sm text-gray-500">No criteria provided.</p>
-                              )}
-                            </div>
+                            <pre className="bg-white p-3 rounded-md border border-gray-200 text-xs text-black overflow-x-auto">{JSON.stringify(a, null, 2)}</pre>
                           </div>
                         </div>
                       )}

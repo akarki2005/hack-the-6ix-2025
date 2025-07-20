@@ -145,6 +145,30 @@ export default function SubmitPage() {
     if (response.ok) {
       const result = await response.json();
       console.log('Repos created:', result.links);
+
+      // Add assessment to backend
+      try {
+        // You may need to get user info from context or props
+        const user = JSON.parse(localStorage.getItem('user')) || {};
+        await fetch('/api/user/assessments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            auth0Id: user.sub,
+            repo: {
+              owner: formData.repoOwner,
+              name: formData.repoName
+            },
+            candidates: formData.candidates,
+            criteria: formData.criteria
+          })
+        });
+        // Trigger dashboard update event
+        window.dispatchEvent(new Event('submissionsUpdated'));
+      } catch (err) {
+        console.error('Error posting assessment:', err);
+      }
+
       setSubmitStatus('success');
       window.dispatchEvent(new Event('submissionsUpdated'));
       setTimeout(() => router.push('/'), 500);

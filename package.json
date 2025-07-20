@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "scripts": {
     "dev": "ts-node server.ts"
   },
@@ -16,7 +15,7 @@
   "devDependencies": {
     "@types/node": "^24.0.15",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
 }
-
