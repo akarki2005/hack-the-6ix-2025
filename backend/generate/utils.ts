@@ -59,7 +59,10 @@ export function stripCodeFences(output) {
   return withoutOpening.replace(/```$/, "");
 }
 
-export function guessTestExtension(testCode: string, sourceFilePath?: string): string {
+export function guessTestExtension(
+  testCode: string,
+  sourceFilePath?: string
+): string {
   let hasTypeScript = false;
   let hasJSX = false;
   let hasReact = false;
@@ -67,13 +70,13 @@ export function guessTestExtension(testCode: string, sourceFilePath?: string): s
   // Check source file extension first if available
   if (sourceFilePath) {
     const sourceExt = path.extname(sourceFilePath);
-    if (sourceExt === '.ts') hasTypeScript = true;
-    if (sourceExt === '.tsx') {
+    if (sourceExt === ".ts") hasTypeScript = true;
+    if (sourceExt === ".tsx") {
       hasTypeScript = true;
       hasJSX = true;
       hasReact = true;
     }
-    if (sourceExt === '.jsx') {
+    if (sourceExt === ".jsx") {
       hasJSX = true;
       hasReact = true;
     }
@@ -115,5 +118,40 @@ export function guessTestExtension(testCode: string, sourceFilePath?: string): s
     return "jsx";
   } else {
     return "js";
+  }
+}
+
+export function copyTestsFolder(
+  repoRoot: string,
+  studentRepoRoot: string
+): void {
+  const src = path.join(repoRoot, "tests");
+  const dest = path.join(studentRepoRoot, "tests");
+
+  if (!fs.existsSync(src)) {
+    throw new Error(`Source tests folder not found at ${src}`);
+  }
+
+  // ensure destination parent exists
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+
+  // Node 16+ has fs.cpSync
+  if (typeof fs.cpSync === "function") {
+    fs.cpSync(src, dest, { recursive: true, force: true });
+  } else {
+    // fallback for older Node versions
+    const copyDir = (srcDir: string, destDir: string) => {
+      fs.mkdirSync(destDir, { recursive: true });
+      for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+        const srcPath = path.join(srcDir, entry.name);
+        const destPath = path.join(destDir, entry.name);
+        if (entry.isDirectory()) {
+          copyDir(srcPath, destPath);
+        } else {
+          fs.copyFileSync(srcPath, destPath);
+        }
+      }
+    };
+    copyDir(src, dest);
   }
 }

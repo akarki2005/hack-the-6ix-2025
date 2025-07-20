@@ -1,6 +1,8 @@
-import { RepoFile, SeniorContext } from "../schemas/analysis";
+import { RepoFile, SeniorContext, SeniorStyleSheet } from "../schemas/analysis";
 import { LLM } from "../schemas/LLM";
 import { generate as generateAI } from "./utils";
+import path from "path";
+import { promises as fs } from "fs";
 
 export interface GenerateSeniorStyleSheetInput {
   seniorContext: SeniorContext;
@@ -176,7 +178,7 @@ export async function GenerateSeniorStyleSheet(
     }
   }
 
-  return {
+  const seniorStyleSheet: SeniorStyleSheet = {
     layering: await summarize("layering"),
     validation: await summarize("validation"),
     errorHandling: await summarize("errorHandling"),
@@ -199,4 +201,19 @@ export async function GenerateSeniorStyleSheet(
     namingExamples,
     rawSourceMeta: undefined,
   };
+
+  // Write the generated style sheet to criteria/stylesheet.json at the project root
+  try {
+    const criteriaDir = path.resolve(process.cwd(), "criteria");
+    await fs.mkdir(criteriaDir, { recursive: true });
+    await fs.writeFile(
+      path.join(criteriaDir, "stylesheet.json"),
+      JSON.stringify(seniorStyleSheet, null, 2),
+      "utf-8"
+    );
+  } catch (error) {
+    console.error("Failed to write Senior Style Sheet:", error);
+  }
+
+  return seniorStyleSheet;
 }

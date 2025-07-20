@@ -192,5 +192,23 @@ export default function generateContext(
       !techStack.tooling.includes(d)
   );
 
-  return { diffFiles, relatedFiles, techStack };
+  // Write senior context to criteria/seniorContext.json in repo root
+  const seniorContext = { diffFiles, relatedFiles, techStack };
+  try {
+    // Always write to <projectRoot>/criteria regardless of repoRoot value
+    const criteriaDir = path.resolve(process.cwd(), "criteria");
+    if (!fs.existsSync(criteriaDir)) {
+      fs.mkdirSync(criteriaDir, { recursive: true });
+    }
+    const outputPath = path.join(criteriaDir, "seniorContext.json");
+    fs.writeFileSync(
+      outputPath,
+      JSON.stringify(seniorContext, null, 2),
+      "utf8"
+    );
+  } catch (err) {
+    console.error("Failed to write seniorContext.json:", err);
+  }
+
+  return seniorContext;
 }
