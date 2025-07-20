@@ -154,8 +154,8 @@ export default function SubmitPage() {
           console.error('User not authenticated');
           return;
         }
-        
-        await fetch('http://localhost:5000/api/user/assessments', {
+
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/assessments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -218,7 +218,7 @@ export default function SubmitPage() {
         <meta name="description" content="Create a new assessment by specifying repository, candidates and criteria" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      
+
       <div className="min-h-screen bg-[var(--bg)]">
         {/* Navbar */}
         <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -502,4 +502,4 @@ export default function SubmitPage() {
       </div>
     </>
   );
-} 
+}

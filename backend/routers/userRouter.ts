@@ -21,16 +21,24 @@ userRouter.post("/signup", async (req, res) => {
 })
 
 userRouter.post("/login", async (req, res) => {
-  await connectDB();
-  const { auth0Id, name, email } = req.body;
-  if (!auth0Id || !name || !email) {
-    return res.status(400).json({ error: "Missing user info" });
+  try {
+    await connectDB();
+
+    const { auth0Id, name, email } = req.body;
+    if (!auth0Id || !name || !email) {
+      return res.status(400).json({ error: "Missing user info" });
+    }
+
+    let user = await User.findOne({ auth0Id });
+    if (!user) {
+      user = await User.create({ auth0Id, name, email });
+    }
+
+    return res.status(200).json({ ok: true, user });
+  } catch (err) {
+    console.error("POST /api/user/login:", err);
+    return res.status(500).json({ error: "Internal server error", details: err.message });
   }
-  let user = await User.findOne({ auth0Id });
-  if (!user) {
-    user = await User.create({ auth0Id, name, email });
-  }
-  res.status(200).json({ ok: true, user });
 });
 
 userRouter.get("/assessments", async (req, res) => {
@@ -41,13 +49,13 @@ userRouter.get("/assessments", async (req, res) => {
     console.log("ERROR: Missing auth0Id");
     return res.status(400).json({ error: "Missing auth0Id" });
   }
-  
+
   try {
     // First, let's see what users exist in the database
     const allUsers = await User.find({}, 'auth0Id name email');
     console.log("All users in database:", allUsers);
     console.log("Looking for user with auth0Id:", auth0Id);
-    
+
     const user = await User.findOne({ auth0Id }).populate('assessments');
     if (!user) {
       console.log("ERROR: User not found for auth0Id:", auth0Id);
@@ -68,23 +76,23 @@ userRouter.post("/assessments", async (req, res) => {
   await connectDB();
   const { auth0Id, repo, candidates, criteria } = req.body;
   console.log("Extracted values:", { auth0Id, repo, candidates, criteria });
-  
+
   if (!auth0Id || !repo || !candidates || !criteria) {
-    console.log("Missing required fields:", { 
-      hasAuth0Id: !!auth0Id, 
-      hasRepo: !!repo, 
-      hasCandidates: !!candidates, 
-      hasCriteria: !!criteria 
+    console.log("Missing required fields:", {
+      hasAuth0Id: !!auth0Id,
+      hasRepo: !!repo,
+      hasCandidates: !!candidates,
+      hasCriteria: !!criteria
     });
     return res.status(400).json({ error: "Missing assessment info" });
   }
-  
+
   const user = await User.findOne({ auth0Id });
   if (!user) {
     console.log("User not found for auth0Id:", auth0Id);
     return res.status(404).json({ error: "User not found" });
   }
-  
+
   // Create the assessment in the Assessment collection
   const assessmentDoc = await Assessment.create({
     repoOwner: repo.owner,

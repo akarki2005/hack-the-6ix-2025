@@ -29,7 +29,7 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Error initializing user:", error);
       }
-      
+
       // Then fetch assessments
       await fetchAssessments(user.sub);
     }
@@ -37,14 +37,14 @@ export default function Dashboard() {
     async function fetchAssessments(auth0Id) {
       try {
         console.log("Fetching assessments for auth0Id:", auth0Id);
-        const res = await fetch(`http://localhost:5000/api/user/assessments?auth0Id=${encodeURIComponent(auth0Id)}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/assessments?auth0Id=${encodeURIComponent(auth0Id)}`);
         console.log("Response status:", res.status);
-        
+
         if (!res.ok) {
           console.error("Failed to fetch assessments:", res.status, res.statusText);
           return;
         }
-        
+
         const data = await res.json();
         console.log("Received data:", data);
         console.log("Setting assessments:", data.assessments);
@@ -194,4 +194,4 @@ export default function Dashboard() {
       </div>
     </>
   );
-} 
+}

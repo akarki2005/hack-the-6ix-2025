@@ -5,8 +5,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing user info' });
     }
     try {
+      console.log("POST /api/user", req.body);
+      console.log("NEXT_PUBLIC_BACKEND_URL", process.env.NEXT_PUBLIC_BACKEND_URL);
       // Forward user info to backend /api/user/login endpoint
-      const backendRes = await fetch(`${process.env.BACKEND_URL}/api/user/login`, {
+      const backendRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -16,6 +18,7 @@ export default async function handler(req, res) {
       const data = await backendRes.json();
       return res.status(backendRes.status).json(data);
     } catch (error) {
+      console.error("POST /api/user → fetch failed:", error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   } else {
