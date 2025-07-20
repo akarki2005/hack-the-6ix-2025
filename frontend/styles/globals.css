@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #000000;
-  /* Coastal palette */
-  --primary: #0E9BCF; /* surf blue */
-  --primary-hover: #0A7EAD; /* darker surf blue */
-  --secondary: #6ADBC6; /* seafoam */
-  --accent: #F4B860; /* warm sand */
-  --bg: #F9FCFD; /* pale bluish background */
-  --surface: #FFFFFF;
-  --text: #0A2540; /* deep navy */
-  --muted: #5E8395;
-  --border: #D7E4EA;
+  /* Dark slate theme - matches dashboard and submit pages */
+  --background: #0f172a; /* slate-900 */
+  --foreground: #ffffff;
+  --primary: #3b82f6; /* blue-500 */
+  --primary-hover: #2563eb; /* blue-600 */
+  --secondary: #9333ea; /* purple-600 */
+  --accent: #8b5cf6; /* violet-500 */
+  --bg: #0f172a; /* slate-900 */
+  --surface: #1e293b; /* slate-800 */
+  --text: #ffffff;
+  --text-muted: #94a3b8; /* slate-400 */
+  --muted: #64748b; /* slate-500 */
+  --border: #475569; /* slate-600 */
 }
 
 @theme inline {
@@ -80,3 +81,96 @@ body {
 .badge-error {
   @apply bg-red-100 text-red-800 px-2.5 py-0.5 rounded-full text-xs font-medium;
 } 
+
+/* Auth0 and popup overrides for dark theme */
+.auth0-lock,
+.auth0-lock-widget,
+.auth0-lock-widget-bg,
+.auth0-lock-container {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+.auth0-lock-header {
+  background-color: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.auth0-lock-input-wrap .auth0-lock-input {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+}
+
+.auth0-lock-submit {
+  background: linear-gradient(to right, var(--primary), var(--secondary)) !important;
+}
+
+/* Global modal/popup overrides */
+[role="dialog"],
+.modal,
+.popup {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* Override any iframe content that might be white */
+iframe {
+  filter: invert(0);
+}
+
+/* Additional Auth0 universal login overrides */
+.auth0-lock .auth0-lock-widget {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  border: 1px solid #475569 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.auth0-lock .auth0-lock-header-logo {
+  filter: brightness(0) invert(1) !important;
+}
+
+.auth0-lock .auth0-lock-name {
+  color: #ffffff !important;
+}
+
+.auth0-lock .auth0-lock-input {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #ffffff !important;
+}
+
+.auth0-lock .auth0-lock-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.auth0-lock .auth0-lock-submit {
+  background: linear-gradient(to right, #3b82f6, #9333ea) !important;
+  border: none !important;
+}
+
+.auth0-lock .auth0-lock-alternative {
+  color: #94a3b8 !important;
+}
+
+.auth0-lock .auth0-lock-alternative a {
+  color: #3b82f6 !important;
+}
+
+/* Override any remaining white backgrounds in popups */
+.auth0-lock *,
+[class*="auth0"] *,
+[data-auth0] *,
+[role="dialog"] * {
+  background-color: inherit !important;
+}
+
+/* Force dark theme on any popup containers */
+div[style*="background-color: rgb(255, 255, 255)"],
+div[style*="background-color: white"],
+div[style*="background: white"],
+div[style*="background: rgb(255, 255, 255)"] {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
