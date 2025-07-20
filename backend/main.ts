@@ -1,4 +1,4 @@
-import userRouter from "./routers/userRouter";
+import express from "express";
 
 const app = require("./app").default;
 const cors = require('cors');
@@ -17,8 +17,6 @@ export const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   await mongoose.connect(MONGODB_URI);
 };
-
-app.use('/api/user', userRouter)
 // for ws
 const server = http.createServer(app);
 

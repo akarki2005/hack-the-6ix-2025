@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useUser } from '@auth0/nextjs-auth0/client';
 import { addSubmission } from '../../src/utils/submissions';
 import Head from 'next/head';
 
 export default function SubmitPage() {
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     repoOwner: '',
     repoName: '',
@@ -148,9 +150,12 @@ export default function SubmitPage() {
 
       // Add assessment to backend
       try {
-        // You may need to get user info from context or props
-        const user = JSON.parse(localStorage.getItem('user')) || {};
-        await fetch('/api/user/assessments', {
+        if (!user || !user.sub) {
+          console.error('User not authenticated');
+          return;
+        }
+        
+        await fetch('http://localhost:5000/api/user/assessments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

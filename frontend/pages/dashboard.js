@@ -11,13 +11,51 @@ export default function Dashboard() {
   const [expandedAssessments, setExpandedAssessments] = useState(new Set());
 
   useEffect(() => {
-    async function fetchAssessments(auth0Id) {
-      const res = await fetch(`http://localhost:5000/api/user/assessments?auth0Id=${encodeURIComponent(auth0Id)}`);
-      const data = await res.json();
-      setAssessments(data.assessments || []);
+    async function initializeUser(user) {
+      // First, try to create/login the user to ensure they exist in the database
+      try {
+        console.log("Initializing user:", user.sub, user.name, user.email);
+        const loginRes = await fetch('/api/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            auth0Id: user.sub,
+            name: user.name,
+            email: user.email
+          })
+        });
+        const loginData = await loginRes.json();
+        console.log("User initialization result:", loginData);
+      } catch (error) {
+        console.error("Error initializing user:", error);
+      }
+      
+      // Then fetch assessments
+      await fetchAssessments(user.sub);
     }
+
+    async function fetchAssessments(auth0Id) {
+      try {
+        console.log("Fetching assessments for auth0Id:", auth0Id);
+        const res = await fetch(`http://localhost:5000/api/user/assessments?auth0Id=${encodeURIComponent(auth0Id)}`);
+        console.log("Response status:", res.status);
+        
+        if (!res.ok) {
+          console.error("Failed to fetch assessments:", res.status, res.statusText);
+          return;
+        }
+        
+        const data = await res.json();
+        console.log("Received data:", data);
+        console.log("Setting assessments:", data.assessments);
+        setAssessments(data.assessments || []);
+      } catch (error) {
+        console.error("Error fetching assessments:", error);
+      }
+    }
+
     if (user && user.sub) {
-      fetchAssessments(user.sub);
+      initializeUser(user);
     }
   }, [user]);
 
