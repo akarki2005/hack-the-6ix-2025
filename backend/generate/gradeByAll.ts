@@ -24,7 +24,7 @@ async function getDiffFilesFromPR(githubLink: string): Promise<DiffFile[]> {
  */
 
 interface GradeByAllInput {
-  github_link: string;
+  diffFiles: DiffFile[];
   newRepoRoot: string;
   llmClient: LLM;
   queries: queryData[];
@@ -37,15 +37,12 @@ interface GradeByAllOutput {
 export async function gradeByAll(
   request: GradeByAllInput
 ): Promise<GradeByAllOutput> {
-  const { github_link, queries, newRepoRoot, llmClient } = request;
-
-  // 1. Fetch raw diff information for the pull-request
-  const diffFiles = await getDiffFilesFromPR(github_link);
+  const { diffFiles, newRepoRoot, llmClient, queries } = request;
 
   // 2. Build a SeniorContext (typed the same way as in generateContext.ts)
   //    For now we only need diffFiles – the other fields will be loaded from
   //    cached JSON files generated earlier by pipeline stages.
-  const seniorContext = generateContext({ diffFiles, newRepoRoot });
+  const seniorContext = generateContext({ diffFiles, repoRoot: newRepoRoot });
 
   // 3. Load cached artefacts produced by earlier stages of the pipeline
   const contextDir = path.join(__dirname, "../context");
