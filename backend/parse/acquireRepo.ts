@@ -1,5 +1,6 @@
 import * as path from "path";
 import { execSync } from "child_process";
+import fixExtensions from "./fixExtensions";
 
 export interface AcquireRepoInput {
   cloneUrl: string; // e.g. "https://github.com/octocat/hello-world.git"
@@ -16,7 +17,13 @@ export default function acquireRepo(
   const dest = input.destination || "./repo";
   try {
     execSync(`git clone ${input.cloneUrl} ${dest}`, { stdio: "ignore" });
-    return { repoRoot: path.resolve(dest) };
+    const repoRoot = path.resolve(dest);
+    try {
+      fixExtensions(repoRoot);
+    } catch (err) {
+      console.error("fixExtensions failed", err);
+    }
+    return { repoRoot };
   } catch (err: any) {
     return { repoRoot: "", error: err.message || String(err) };
   }

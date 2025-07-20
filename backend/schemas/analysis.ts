@@ -85,7 +85,6 @@ export const TestResultSchema = z.object({
   total: z.number(),
   passed: z.number(),
   failed: z.number(),
-  durationMs: z.number().optional(),
   failedTests: z
     .array(
       z.object({
@@ -116,5 +115,5 @@ export type SeniorContext = z.infer<typeof SeniorContextSchema>;
 export type SeniorStyleSheet = z.infer<typeof SeniorStyleSheetSchema>;
 export type UserCriterion = z.infer<typeof UserCriterionSchema>;
 export type CriterionScore = z.infer<typeof CriterionScoreSchema>;
-export type TestResult = z.infer<typeof TestResultSchema>;
+export type TestResults = z.infer<typeof TestResultSchema>;
 export type GradeReport = z.infer<typeof GradeReportSchema>;
